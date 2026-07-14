@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Erosion Control Dispatch</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.6.0/dist/tabler-icons.min.css" />
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #6b7280;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f9fafb;
+  --color-background-tertiary: #f3f4f6;
+  --color-border-tertiary: #e5e7eb;
+  --color-border-secondary: #d1d5db;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+body{font-family:var(--font-sans);font-size:15px;color:var(--color-text-primary);background:#f3f4f6;min-height:100vh}
+.app-wrap{max-width:540px;margin:0 auto;background:#fff;min-height:100vh;box-shadow:0 0 24px rgba(0,0,0,.08)}
+.app-header{background:#534AB7;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:10px}
+.app-header h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
+.app-header i{font-size:22px}
+.tab-bar{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);background:#fff}
+.tab{flex:1;padding:11px 0;font-size:14px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-align:center}
+.tab.active{color:#534AB7;border-bottom:2px solid #7F77DD}
+.panel{display:none;padding:1.25rem}
+.panel.active{display:block}
+label{font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:4px;margin-top:14px}
+label:first-child{margin-top:0}
+input,select,textarea{width:100%;font-size:14px;font-family:var(--font-sans);padding:9px 11px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:#fff;color:var(--color-text-primary);outline:none;transition:border .15s}
+input:focus,select:focus,textarea:focus{border-color:#7F77DD}
+textarea{resize:vertical;min-height:80px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.job-type-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+.jt-btn{font-size:13px;padding:7px 13px;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:#fff;color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s;user-select:none}
+.jt-btn:hover{background:var(--color-background-secondary)}
+.jt-btn.selected{background:#EEEDFE;color:#3C3489;border-color:#7F77DD;font-weight:500}
+.crew-team-row{display:flex;gap:8px;margin-top:4px}
+.ct-btn{flex:1;padding:9px 0;font-size:13px;font-weight:500;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:#fff;color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s}
+.ct-btn:hover{background:var(--color-background-secondary)}
+.ct-btn.sel-v{background:#E1F5EE;color:#0F6E56;border-color:#1D9E75}
+.ct-btn.sel-2{background:#E6F1FB;color:#185FA5;border-color:#378ADD}
+.ct-btn.sel-all{background:#FAEEDA;color:#854F0B;border-color:#BA7517}
+.member-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;min-height:32px}
+.m-btn{font-size:13px;padding:6px 12px;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:#fff;color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s;display:flex;align-items:center;gap:5px}
+.m-btn:hover{background:var(--color-background-secondary)}
+.m-btn.selected{background:#EEEDFE;color:#3C3489;border-color:#7F77DD}
+.m-btn .role{font-size:10px;padding:1px 5px;border-radius:4px;background:#C0DD97;color:#27500A;font-weight:500}
+.m-btn.selected .role{background:#AFA9EC;color:#26215C}
+.toggle-row{display:flex;align-items:center;gap:10px;margin-top:10px;padding:11px 13px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);cursor:pointer;user-select:none}
+.toggle-row.active{background:#FAECE7;border-color:#D85A30}
+.toggle-row i{font-size:18px;color:var(--color-text-secondary)}
+.toggle-row.active i{color:#993C1D}
+.toggle-label{font-size:13px;color:var(--color-text-secondary);flex:1}
+.toggle-row.active .toggle-label{color:#993C1D;font-weight:500}
+.toggle-switch{width:36px;height:20px;border-radius:10px;background:var(--color-border-secondary);position:relative;transition:background .2s;flex-shrink:0}
+.toggle-switch.on{background:#D85A30}
+.toggle-switch::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .2s}
+.toggle-switch.on::after{transform:translateX(16px)}
+.photo-upload{border:0.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-md);padding:1.5rem;text-align:center;cursor:pointer;color:var(--color-text-secondary);font-size:13px;background:var(--color-background-secondary);transition:background .15s}
+.photo-upload:hover{background:var(--color-background-tertiary)}
+.photo-upload i{font-size:30px;display:block;margin-bottom:6px;color:#7F77DD}
+#photo-input{display:none}
+.photo-previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.photo-thumb{position:relative;width:76px;height:76px;border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid var(--color-border-tertiary)}
+.photo-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-thumb .rm{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;padding:0}
+.priority-wrap{position:relative}
+.priority-wrap select{padding-left:28px}
+.priority-dot{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:11px;height:11px;border-radius:50%;background:#d1d5db;pointer-events:none;transition:background .15s}
+.priority-dot.low{background:#3DB85C}
+.priority-dot.med{background:#F5C518}
+.priority-dot.high{background:#E63B3B}
+.input-unit{position:relative}
+.input-unit input{padding-right:40px}
+.input-unit .unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--color-text-secondary);pointer-events:none}
+.dispatch-btn{width:100%;margin-top:18px;padding:13px;background:#534AB7;color:#fff;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font-sans);display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
+.dispatch-btn:hover{background:#3C3489}
+.dispatch-btn:disabled{background:#a9a4d8;cursor:not-allowed}
+.toast{display:none;background:#EAF3DE;color:#27500A;border:0.5px solid #639922;border-radius:var(--border-radius-md);padding:11px 14px;font-size:13px;margin-bottom:14px;align-items:center;gap:8px}
+.toast.show{display:flex}
+.toast.error{background:#FBE7E5;color:#8A2A1D;border-color:#D85A30}
+.sub-tab-bar{display:flex;gap:0;margin-bottom:14px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden}
+.sub-tab{flex:1;padding:8px 0;font-size:13px;font-weight:500;text-align:center;cursor:pointer;color:var(--color-text-secondary);background:#fff;transition:all .15s;border:none;font-family:var(--font-sans)}
+.sub-tab.active{background:#EEEDFE;color:#3C3489}
+.crew-filter{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.filter-chip{font-size:12px;padding:4px 12px;border-radius:20px;cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:#fff;color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s}
+.filter-chip.active{background:#EEEDFE;color:#534AB7;border-color:#7F77DD}
+.job-card{background:#fff;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.job-card.archived{opacity:.72}
+.job-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.job-title{font-size:15px;font-weight:600}
+.job-meta{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--border-radius-md);font-weight:500}
+.badge-new{background:#EEEDFE;color:#3C3489}
+.badge-done{background:#EAF3DE;color:#27500A}
+.badge-recurring{background:#FAECE7;color:#993C1D}
+.pri-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 8px;border-radius:var(--border-radius-md);font-weight:500;background:var(--color-background-secondary);color:var(--color-text-secondary)}
+.pri-badge .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pri-badge.low .dot{background:#3DB85C}
+.pri-badge.med .dot{background:#F5C518}
+.pri-badge.high .dot{background:#E63B3B}
+.jt-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--border-radius-md);background:#EEEDFE;color:#3C3489;margin:2px 2px 2px 0}
+.member-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--border-radius-md);background:#E1F5EE;color:#0F6E56;margin:2px 2px 2px 0}
+.job-notes{font-size:13px;color:var(--color-text-secondary);margin:6px 0 8px;font-style:italic}
+.job-detail-row{font-size:12px;color:var(--color-text-secondary);display:flex;gap:14px;flex-wrap:wrap;margin:4px 0 6px}
+.job-detail-row span{display:flex;align-items:center;gap:4px}
+.job-thumbs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.job-thumb{width:56px;height:56px;border-radius:6px;object-fit:cover;border:0.5px solid var(--color-border-tertiary);cursor:pointer}
+.job-thumb:hover{opacity:.85}
+.status-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.status-btn{font-size:12px;padding:6px 13px;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s;display:flex;align-items:center;gap:5px}
+.status-btn:hover{background:var(--color-background-tertiary)}
+.empty{text-align:center;padding:3rem 1rem;color:var(--color-text-secondary);font-size:14px}
+.empty i{font-size:40px;display:block;margin-bottom:10px;color:#d1d5db}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:99}
+.lightbox.open{display:flex}
+.lightbox img{max-width:92%;max-height:88%;border-radius:var(--border-radius-md)}
+.lightbox-close{position:absolute;top:18px;right:18px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+<div class="app-wrap">
+  <div class="app-header">
+    <i class="ti ti-tractor"></i>
+    <h1>Erosion Control Dispatch</h1>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active" onclick="switchTab('boss')"><i class="ti ti-clipboard-list"></i> Boss — Dispatch</div>
+    <div class="tab" onclick="switchTab('crew')"><i class="ti ti-users"></i> Crew — My Jobs</div>
+  </div>
+
+  <!-- BOSS PANEL -->
+  <div class="panel active" id="panel-boss">
+    <div class="toast" id="toast"><i class="ti ti-circle-check"></i> <span id="toast-msg"></span></div>
+
+    <div class="row2">
+      <div>
+        <label>Job site</label>
+        <input type="text" id="customer" placeholder="e.g. Hillside Estates" />
+      </div>
+      <div>
+        <label>Phone</label>
+        <input type="tel" id="phone" placeholder="(555) 000-0000" />
+      </div>
+    </div>
+
+    <label>Job site address</label>
+    <input type="text" id="address" placeholder="123 Hillside Rd, Walled Lake, MI" />
+
+    <label>Job type <span style="font-weight:400;font-size:12px">(select all that apply)</span></label>
+    <div class="job-type-grid">
+      <button class="jt-btn" onclick="toggleJT(this)">Silt Fence (2ft)</button>
+      <button class="jt-btn" onclick="toggleJT(this)">Silt Fence (3ft)</button>
+      <button class="jt-btn" onclick="toggleJT(this)">High Flow</button>
+      <button class="jt-btn" onclick="toggleJT(this)">Tree Fence</button>
+      <button class="jt-btn" onclick="toggleJT(this)">Mulch Blankets</button>
+      <button class="jt-btn" onclick="toggleJT(this)">Ventrac</button>
+      <button class="jt-btn" onclick="toggleJT(this)">Weed Whip</button>
+    </div>
+
+    <div class="row3" style="margin-top:14px">
+      <div>
+        <label>Est. duration</label>
+        <select id="duration">
+          <option value="">Select...</option>
+          <option>1 hour</option>
+          <option>2 hours</option>
+          <option>3 hours</option>
+          <option>Half day</option>
+          <option>Full day</option>
+          <option>Multiple days</option>
+        </select>
+      </div>
+      <div>
+        <label>Qty / footage</label>
+        <div class="input-unit">
+          <input type="number" id="footage" placeholder="0" min="0" />
+          <span class="unit">ft</span>
+        </div>
+      </div>
+      <div>
+        <label>Priority</label>
+        <div class="priority-wrap">
+          <div class="priority-dot" id="priority-dot"></div>
+          <select id="priority-sel" onchange="updatePriorityDot()">
+            <option value="">Select...</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <label style="margin-top:14px">Recurring job</label>
+    <div class="toggle-row" id="recurring-toggle" onclick="toggleRecurring()">
+      <i class="ti ti-refresh"></i>
+      <span class="toggle-label">Mark as recurring / return visit</span>
+      <div class="toggle-switch" id="recurring-switch"></div>
+    </div>
+
+    <label>Assign crew</label>
+    <div class="crew-team-row">
+      <button class="ct-btn" onclick="selectTeam(this,'vaquero')">Vaquero's</button>
+      <button class="ct-btn" onclick="selectTeam(this,'crew2')">Crew 2</button>
+      <button class="ct-btn" onclick="selectTeam(this,'all')">All / Mixed</button>
+    </div>
+    <div class="member-grid" id="member-grid"></div>
+
+    <label>Job notes</label>
+    <textarea id="notes" placeholder="Describe the situation, access instructions, materials needed..."></textarea>
+
+    <label>Photos</label>
+    <div class="photo-upload" onclick="document.getElementById('photo-input').click()">
+      <i class="ti ti-camera-plus"></i>
+      Tap to add photos from call or site visit
+    </div>
+    <input type="file" id="photo-input" multiple accept="image/*" onchange="handlePhotos(event)" />
+    <div class="photo-previews" id="previews"></div>
+
+    <button class="dispatch-btn" onclick="dispatchJob()">
+      <i class="ti ti-send"></i> Dispatch Job to Crew
+    </button>
+  </div>
+
+  <!-- CREW PANEL -->
+  <div class="panel" id="panel-crew">
+    <div class="sub-tab-bar">
+      <button class="sub-tab active" onclick="switchSubTab(this,'active')"><i class="ti ti-list-check"></i> Active Jobs</button>
+      <button class="sub-tab" onclick="switchSubTab(this,'history')"><i class="ti ti-archive"></i> Job History</button>
+    </div>
+    <div class="crew-filter">
+      <div class="filter-chip active" onclick="filterCrew(this,'all')">All</div>
+      <div class="filter-chip" onclick="filterCrew(this,'Mike')">Mike</div>
+      <div class="filter-chip" onclick="filterCrew(this,'Zac')">Zac</div>
+      <div class="filter-chip" onclick="filterCrew(this,'Kurt')">Kurt</div>
+      <div class="filter-chip" onclick="filterCrew(this,'Jonny')">Jonny</div>
+      <div class="filter-chip" onclick="filterCrew(this,'Zach')">Zach</div>
+      <div class="filter-chip" onclick="filterCrew(this,'Otis')">Otis</div>
+      <div class="filter-chip" onclick="filterCrew(this,'Jeff')">Jeff</div>
+      <div class="filter-chip" onclick="filterCrew(this,'Cole')">Cole</div>
+      <div class="filter-chip" onclick="filterCrew(this,'Bob')">Bob</div>
+      <div class="filter-chip" onclick="filterCrew(this,'Trav')">Trav</div>
+    </div>
+    <div id="job-list"></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()"><i class="ti ti-x"></i></button>
+  <img id="lightbox-img" src="" alt="Job site photo" />
+</div>
+
+<!-- Firebase (compat build so the rest of this file can keep using plain global functions/onclick handlers) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDSslbIPw4N68nlUonigbqpDhLFsQNz0EQ",
+  authDomain: "clearwater-scheduling.firebaseapp.com",
+  projectId: "clearwater-scheduling",
+  storageBucket: "clearwater-scheduling.firebasestorage.app",
+  messagingSenderId: "1078468707265",
+  appId: "1:1078468707265:web:909bed2d09540c7e8a2540"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+const CREWS={
+  vaquero:[{name:'Mike',role:'foreman'},{name:'Zac',role:'foreman'},{name:'Kurt',role:''},{name:'Jonny',role:''},{name:'Zach',role:''}],
+  crew2:[{name:'Otis',role:'foreman'},{name:'Jeff',role:''},{name:'Cole',role:''},{name:'Bob',role:''}],
+  solo:[{name:'Trav',role:''}]
+};
+
+let photos=[],jobs=[],crewFilter='all',activeTeam='',isRecurring=false,crewSubTab='active';
+
+// Live sync: Firestore pushes updates to every connected device in real time.
+db.collection('jobs').orderBy('createdAt','desc').onSnapshot(snap=>{
+  jobs = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderJobs();
+}, err=>{
+  console.error('Firestore sync error:', err);
+  showToast('Sync error — check your connection or Firestore rules', true);
+});
+
+function updatePriorityDot(){
+  const val=document.getElementById('priority-sel').value;
+  const dot=document.getElementById('priority-dot');
+  dot.className='priority-dot'+(val==='Low'?' low':val==='Medium'?' med':val==='High'?' high':'');
+}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===(t==='boss'?0:1)));
+  document.getElementById('panel-boss').classList.toggle('active',t==='boss');
+  document.getElementById('panel-crew').classList.toggle('active',t==='crew');
+  if(t==='crew')renderJobs();
+}
+
+function switchSubTab(btn,tab){
+  document.querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');crewSubTab=tab;renderJobs();
+}
+
+function toggleRecurring(){
+  isRecurring=!isRecurring;
+  document.getElementById('recurring-toggle').classList.toggle('active',isRecurring);
+  document.getElementById('recurring-switch').classList.toggle('on',isRecurring);
+}
+
+function selectTeam(btn,team){
+  document.querySelectorAll('.ct-btn').forEach(b=>b.className='ct-btn');
+  btn.classList.add(team==='vaquero'?'sel-v':team==='crew2'?'sel-2':'sel-all');
+  activeTeam=team;
+  let members=team==='vaquero'?[...CREWS.vaquero,...CREWS.solo]:team==='crew2'?[...CREWS.crew2,...CREWS.solo]:[...CREWS.vaquero,...CREWS.crew2,...CREWS.solo];
+  renderMembers(members,team==='all'?[]:members.filter(m=>m.role!==''));
+}
+
+function renderMembers(members,preselect){
+  document.getElementById('member-grid').innerHTML=members.map(m=>`
+    <button class="m-btn${preselect.some(p=>p.name===m.name)?' selected':''}" onclick="toggleMember(this)">
+      ${m.name}${m.role?`<span class="role">${m.role}</span>`:''}
+    </button>`).join('');
+}
+
+function toggleMember(btn){btn.classList.toggle('selected');}
+function getSelectedMembers(){return [...document.querySelectorAll('.m-btn.selected')].map(b=>b.textContent.replace('foreman','').trim());}
+function toggleJT(btn){btn.classList.toggle('selected');}
+function getSelectedJTs(){return [...document.querySelectorAll('.jt-btn.selected')].map(b=>b.textContent);}
+
+function handlePhotos(e){
+  [...e.target.files].forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{photos.push(ev.target.result);renderPreviews();};
+    r.readAsDataURL(f);
+  });
+}
+
+function renderPreviews(){
+  document.getElementById('previews').innerHTML=photos.map((p,i)=>`
+    <div class="photo-thumb">
+      <img src="${p}" alt="Site photo ${i+1}"/>
+      <button class="rm" onclick="removePhoto(${i})" aria-label="Remove photo"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+}
+function removePhoto(i){photos.splice(i,1);renderPreviews();}
+
+async function dispatchJob(){
+  const customer=document.getElementById('customer').value.trim();
+  const phone=document.getElementById('phone').value.trim();
+  const address=document.getElementById('address').value.trim();
+  const jobtypes=getSelectedJTs();
+  const members=getSelectedMembers();
+  const notes=document.getElementById('notes').value.trim();
+  const duration=document.getElementById('duration').value;
+  const footage=document.getElementById('footage').value;
+  const priority=document.getElementById('priority-sel').value;
+  if(!customer||!address||!jobtypes.length||!members.length||!priority){
+    alert('Please fill in: job site, address, at least one job type, priority, and at least one crew member.');return;
+  }
+  const teamLabel=activeTeam==='vaquero'?"Vaquero's Crew":activeTeam==='crew2'?'Crew 2':'Mixed';
+
+  const dispatchBtn=document.querySelector('.dispatch-btn');
+  const originalBtnHtml=dispatchBtn.innerHTML;
+  dispatchBtn.disabled=true;
+  dispatchBtn.innerHTML='<i class="ti ti-loader-2"></i> Dispatching...';
+
+  try{
+    const jobRef=db.collection('jobs').doc();
+
+    // Upload any photos to Firebase Storage first, collecting their URLs.
+    const photoUrls=[];
+    for(let i=0;i<photos.length;i++){
+      const snap=await storage.ref(`jobs/${jobRef.id}/photo${i}.jpg`).putString(photos[i],'data_url');
+      photoUrls.push(await snap.ref.getDownloadURL());
+    }
+
+    await jobRef.set({
+      customer,phone,address,jobtypes,members,teamLabel,
+      notes,priority,duration,footage,recurring:isRecurring,
+      photos:photoUrls,status:'New',
+      time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+      date:new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}),
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    showToast(`Job dispatched to ${members.join(', ')}`);
+    resetForm();
+  }catch(err){
+    console.error('Dispatch failed:',err);
+    alert('Could not dispatch job — check your connection and Firestore/Storage setup, then try again.');
+  }finally{
+    dispatchBtn.disabled=false;
+    dispatchBtn.innerHTML=originalBtnHtml;
+  }
+}
+
+function resetForm(){
+  ['customer','phone','address','notes','footage'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('duration').value='';
+  document.getElementById('priority-sel').value='';
+  document.getElementById('priority-dot').className='priority-dot';
+  document.querySelectorAll('.jt-btn,.ct-btn').forEach(b=>{b.className=b.classList.contains('jt-btn')?'jt-btn':'ct-btn';});
+  document.getElementById('member-grid').innerHTML='';
+  isRecurring=false;
+  document.getElementById('recurring-toggle').classList.remove('active');
+  document.getElementById('recurring-switch').classList.remove('on');
+  activeTeam='';photos=[];renderPreviews();
+}
+
+function showToast(msg,isError){
+  const t=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  t.classList.toggle('error',!!isError);
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+function filterCrew(chip,val){
+  crewFilter=val;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');renderJobs();
+}
+
+function priBadge(p){
+  const cls=p==='Low'?'low':p==='Medium'?'med':'high';
+  return `<span class="pri-badge ${cls}"><span class="dot"></span>${p}</span>`;
+}
+
+function renderJobs(){
+  const list=document.getElementById('job-list');
+  const isHistory=crewSubTab==='history';
+  let filtered=isHistory?jobs.filter(j=>j.status==='Done'):jobs.filter(j=>j.status!=='Done');
+  if(crewFilter!=='all')filtered=filtered.filter(j=>j.members.includes(crewFilter));
+  if(!filtered.length){
+    list.innerHTML=`<div class="empty"><i class="ti ti-${isHistory?'archive':'clipboard'}"></i>${isHistory?'No completed jobs yet.<br>Completed jobs will appear here.':'No active jobs.<br>Create one in the Boss tab.'}</div>`;return;
+  }
+  list.innerHTML=filtered.map(j=>`
+    <div class="job-card${j.status==='Done'?' archived':''}">
+      <div class="job-card-header">
+        <div>
+          <div class="job-title">${j.customer}</div>
+          <div class="job-meta"><i class="ti ti-users" style="font-size:12px"></i> ${j.teamLabel} &nbsp;·&nbsp; ${j.date} ${j.time}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          ${priBadge(j.priority)}
+          <span class="badge badge-${j.status==='Done'?'done':'new'}">${j.status}</span>
+          ${j.recurring?`<span class="badge badge-recurring"><i class="ti ti-refresh" style="font-size:10px"></i> Recurring</span>`:''}
+        </div>
+      </div>
+      <div style="margin-bottom:6px">${j.jobtypes.map(t=>`<span class="jt-tag">${t}</span>`).join('')}</div>
+      <div style="margin-bottom:6px">${j.members.map(m=>`<span class="member-tag"><i class="ti ti-user" style="font-size:10px"></i> ${m}</span>`).join('')}</div>
+      ${(j.duration||j.footage)?`<div class="job-detail-row">
+        ${j.duration?`<span><i class="ti ti-clock"></i> ${j.duration}</span>`:''}
+        ${j.footage?`<span><i class="ti ti-ruler"></i> ${j.footage} ft</span>`:''}
+      </div>`:''}
+      <div style="font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:4px;color:var(--color-text-secondary)">
+        <i class="ti ti-map-pin" style="font-size:13px"></i> ${j.address}
+      </div>
+      ${j.phone?`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px"><i class="ti ti-phone" style="font-size:13px"></i> ${j.phone}</div>`:''}
+      ${j.notes?`<div class="job-notes">"${j.notes}"</div>`:''}
+      ${j.photos&&j.photos.length?`<div class="job-thumbs">${j.photos.map((p,pi)=>`<img class="job-thumb" src="${p}" alt="Site photo ${pi+1}" onclick="openLightbox('${p}')" />`).join('')}</div>`:''}
+      <div class="status-row">
+        ${!isHistory
+          ?`<button class="status-btn" onclick="markDone('${j.id}')"><i class="ti ti-circle-check"></i> Mark as done</button>`
+          :`<button class="status-btn" onclick="restoreJob('${j.id}')"><i class="ti ti-arrow-back-up"></i> Restore</button>`
+        }
+        <button class="status-btn" onclick="deleteJob('${j.id}')" style="margin-left:auto"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function markDone(id){
+  db.collection('jobs').doc(id).update({status:'Done'}).catch(err=>{console.error(err);showToast('Could not update job',true);});
+}
+function restoreJob(id){
+  db.collection('jobs').doc(id).update({status:'New'}).then(()=>{
+    crewSubTab='active';
+    document.querySelectorAll('.sub-tab').forEach((b,i)=>b.classList.toggle('active',i===0));
+  }).catch(err=>{console.error(err);showToast('Could not restore job',true);});
+}
+function deleteJob(id){
+  if(confirm('Delete this job? This cannot be undone.')){
+    db.collection('jobs').doc(id).delete().catch(err=>{console.error(err);showToast('Could not delete job',true);});
+  }
+}
+function openLightbox(src){document.getElementById('lightbox-img').src=src;document.getElementById('lightbox').classList.add('open');}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
+
+renderJobs();
+</script>
+</body>
+</html>
