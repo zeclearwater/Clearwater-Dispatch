@@ -277,6 +277,12 @@ textarea{resize:vertical;min-height:80px}
   <div class="panel" id="panel-invoices">
     <div class="toast" id="toast-inv"><i class="ti ti-circle-check"></i> <span id="toast-inv-msg"></span></div>
 
+    <div class="sub-tab-bar">
+      <button class="sub-tab active" onclick="switchInvoiceSubTab(this,'new')"><i class="ti ti-file-plus"></i> New Invoice</button>
+      <button class="sub-tab" onclick="switchInvoiceSubTab(this,'history')"><i class="ti ti-history"></i> Sent History</button>
+    </div>
+
+    <div id="invoice-new-tab">
     <label>Select a job to invoice</label>
     <select id="inv-job-select" onchange="loadInvoiceFromJob()">
       <option value="">Choose a job...</option>
@@ -354,6 +360,11 @@ textarea{resize:vertical;min-height:80px}
         <i class="ti ti-send"></i> Send Invoice
       </button>
     </div>
+    </div>
+
+    <div id="invoice-history-tab" style="display:none">
+      <div id="invoice-history-list"></div>
+    </div>
   </div>
 </div>
 
@@ -405,6 +416,7 @@ const JOB_TYPE_UNITS={
 function unitFor(jobType){return JOB_TYPE_UNITS[jobType]||'ft';}
 
 let photos=[],jobs=[],crewFilter='all',activeTeam='',isRecurring=false,crewSubTab='active',jobtypeQuantities={},pendingUpdates={};
+let sentInvoices=[],invoiceSubTab='new';
 
 // Live sync: Firestore pushes updates to every connected device in real time.
 db.collection('jobs').orderBy('createdAt','desc').onSnapshot(snap=>{
@@ -414,6 +426,14 @@ db.collection('jobs').orderBy('createdAt','desc').onSnapshot(snap=>{
 }, err=>{
   console.error('Firestore sync error:', err);
   showToast('Sync error — check your connection or Firestore rules', true);
+});
+
+// Sent-invoice history, synced the same way.
+db.collection('invoices').orderBy('sentAt','desc').onSnapshot(snap=>{
+  sentInvoices = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderInvoiceHistory();
+}, err=>{
+  console.error('Invoice history sync error:', err);
 });
 
 function updatePriorityDot(){
@@ -433,8 +453,16 @@ function switchTab(t){
 }
 
 function switchSubTab(btn,tab){
-  document.querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#panel-crew .sub-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');crewSubTab=tab;renderJobs();
+}
+
+function switchInvoiceSubTab(btn,tab){
+  document.querySelectorAll('#panel-invoices .sub-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');invoiceSubTab=tab;
+  document.getElementById('invoice-new-tab').style.display=tab==='new'?'block':'none';
+  document.getElementById('invoice-history-tab').style.display=tab==='history'?'block':'none';
+  if(tab==='history')renderInvoiceHistory();
 }
 
 function toggleRecurring(){
@@ -824,57 +852,142 @@ function showInvoiceToast(msg,isError){
   setTimeout(()=>t.classList.remove('show'),3500);
 }
 
-async function sendInvoice(){
-  const email=document.getElementById('inv-email').value.trim();
-  const billTo=document.getElementById('inv-billto').value.trim();
-  if(!email){showInvoiceToast('Add a customer email before sending',true);return;}
-  if(!billTo){showInvoiceToast('Add a bill-to name before sending',true);return;}
-  if(typeof emailjs==='undefined'||EMAILJS_PUBLIC_KEY.startsWith('YOUR_')){
-    showInvoiceToast('Email sending isn\'t set up yet — add your EmailJS keys first',true);
-    return;
-  }
+function invoiceEmailReady(){
+  return typeof emailjs!=='undefined' && !EMAILJS_PUBLIC_KEY.startsWith('YOUR_');
+}
 
-  const sendBtn=document.getElementById('inv-send-btn');
-  const originalHtml=sendBtn.innerHTML;
-  sendBtn.disabled=true;
-  sendBtn.innerHTML='<i class="ti ti-loader-2"></i> Sending...';
-
-  const materialsText=invoiceMaterials
+function materialsToText(materials){
+  return (materials||[])
     .filter(m=>m.material)
     .map(m=>`${m.material} — Qty: ${m.qty||'-'}${m.location?` — Location: ${m.location}`:''}`)
     .join('\n');
+}
+
+async function deliverInvoice(record, btn){
+  const originalHtml=btn.innerHTML;
+  btn.disabled=true;
+  btn.innerHTML='<i class="ti ti-loader-2"></i> Sending...';
 
   const params={
-    to_email:email,
-    to_name:billTo,
-    invoice_number:document.getElementById('inv-number').value,
-    invoice_date:document.getElementById('inv-date').value,
-    site:document.getElementById('inv-site').value,
-    foreman:document.getElementById('inv-foreman').value,
-    phase:document.getElementById('inv-phase').value,
-    land_or_vertical:document.getElementById('inv-landvert').value,
-    job_complete:document.getElementById('inv-complete').value,
-    materials_list:materialsText,
-    machine_notes:document.getElementById('inv-machine-notes').value,
-    labor_notes:document.getElementById('inv-labor-notes').value,
-    other_notes:document.getElementById('inv-other-notes').value,
+    to_email:record.email,
+    to_name:record.billTo,
+    invoice_number:record.invoiceNumber,
+    invoice_date:record.invoiceDate,
+    site:record.site,
+    foreman:record.foreman,
+    phase:record.phase,
+    land_or_vertical:record.landOrVertical,
+    job_complete:record.jobComplete,
+    materials_list:materialsToText(record.materials),
+    machine_notes:record.machineNotes,
+    labor_notes:record.laborNotes,
+    other_notes:record.otherNotes,
     from_name:'Clearwater Erosion Control Inc.'
   };
 
   try{
     await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,params);
-    showInvoiceToast(`Invoice sent to ${email}`);
+    await db.collection('invoices').add({...record,sentAt:firebase.firestore.FieldValue.serverTimestamp()});
+    showInvoiceToast(`Invoice sent to ${record.email}`);
+    return true;
   }catch(err){
     console.error('Invoice send failed:',err);
     showInvoiceToast('Could not send invoice — check your connection and EmailJS setup',true);
+    return false;
   }finally{
-    sendBtn.disabled=false;
-    sendBtn.innerHTML=originalHtml;
+    btn.disabled=false;
+    btn.innerHTML=originalHtml;
   }
+}
+
+async function sendInvoice(){
+  const email=document.getElementById('inv-email').value.trim();
+  const billTo=document.getElementById('inv-billto').value.trim();
+  if(!email){showInvoiceToast('Add a customer email before sending',true);return;}
+  if(!billTo){showInvoiceToast('Add a bill-to name before sending',true);return;}
+  if(!invoiceEmailReady()){
+    showInvoiceToast('Email sending isn\'t set up yet — add your EmailJS keys first',true);
+    return;
+  }
+
+  const jobId=document.getElementById('inv-job-select').value||null;
+  const record={
+    jobId,
+    invoiceNumber:document.getElementById('inv-number').value,
+    invoiceDate:document.getElementById('inv-date').value,
+    billTo,
+    email,
+    site:document.getElementById('inv-site').value,
+    foreman:document.getElementById('inv-foreman').value,
+    phase:document.getElementById('inv-phase').value,
+    landOrVertical:document.getElementById('inv-landvert').value,
+    jobComplete:document.getElementById('inv-complete').value,
+    materials:invoiceMaterials.filter(m=>m.material),
+    machineNotes:document.getElementById('inv-machine-notes').value,
+    laborNotes:document.getElementById('inv-labor-notes').value,
+    otherNotes:document.getElementById('inv-other-notes').value
+  };
+
+  await deliverInvoice(record,document.getElementById('inv-send-btn'));
+}
+
+function renderInvoiceHistory(){
+  const list=document.getElementById('invoice-history-list');
+  if(!list)return;
+  if(!sentInvoices.length){
+    list.innerHTML=`<div class="empty"><i class="ti ti-history"></i>No invoices sent yet.<br>Sent invoices will appear here.</div>`;
+    return;
+  }
+  list.innerHTML=sentInvoices.map(inv=>`
+    <div class="job-card">
+      <div class="job-card-header">
+        <div>
+          <div class="job-title">${inv.invoiceNumber||'Invoice'}</div>
+          <div class="job-meta"><i class="ti ti-user" style="font-size:12px"></i> ${inv.billTo||''} &nbsp;·&nbsp; ${inv.invoiceDate||''}</div>
+        </div>
+      </div>
+      <div style="font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:4px;color:var(--color-text-secondary)">
+        <i class="ti ti-map-pin" style="font-size:13px"></i> ${inv.site||''}
+      </div>
+      <div style="font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:8px;color:var(--color-text-secondary)">
+        <i class="ti ti-mail" style="font-size:13px"></i> Sent to ${inv.email||''}
+      </div>
+      ${(inv.materials&&inv.materials.length)?`<div class="job-detail-row" style="margin-bottom:6px">${inv.materials.map(m=>`<span><i class="ti ti-ruler"></i> ${m.material}: ${m.qty||'-'}</span>`).join('')}</div>`:''}
+      <div class="status-row">
+        <button class="status-btn" id="resend-btn-${inv.id}" onclick="resendInvoice('${inv.id}')"><i class="ti ti-send"></i> Resend</button>
+      </div>
+    </div>`).join('');
+}
+
+async function resendInvoice(id){
+  const inv=sentInvoices.find(i=>i.id===id);
+  if(!inv)return;
+  if(!invoiceEmailReady()){
+    showInvoiceToast('Email sending isn\'t set up yet — add your EmailJS keys first',true);
+    return;
+  }
+  const btn=document.getElementById(`resend-btn-${id}`);
+  await deliverInvoice({
+    jobId:inv.jobId||null,
+    invoiceNumber:inv.invoiceNumber,
+    invoiceDate:inv.invoiceDate,
+    billTo:inv.billTo,
+    email:inv.email,
+    site:inv.site,
+    foreman:inv.foreman,
+    phase:inv.phase,
+    landOrVertical:inv.landOrVertical,
+    jobComplete:inv.jobComplete,
+    materials:inv.materials,
+    machineNotes:inv.machineNotes,
+    laborNotes:inv.laborNotes,
+    otherNotes:inv.otherNotes
+  },btn);
 }
 
 renderJobs();
 renderInvoiceJobPicker();
+renderInvoiceHistory();
 </script>
 </body>
 </html>
