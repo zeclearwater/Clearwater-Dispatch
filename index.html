@@ -127,6 +127,12 @@ textarea{resize:vertical;min-height:80px}
 .status-btn:hover{background:var(--color-background-tertiary)}
 .empty{text-align:center;padding:3rem 1rem;color:var(--color-text-secondary);font-size:14px}
 .empty i{font-size:40px;display:block;margin-bottom:10px;color:#d1d5db}
+.inv-mat-row{display:flex;gap:6px;margin-top:6px;align-items:center}
+.inv-mat-row input{font-size:13px;padding:8px 9px}
+.inv-mat-row .inv-mat-name{flex:2.4;min-width:0}
+.inv-mat-row .inv-mat-qty{flex:0.7;min-width:0}
+.inv-mat-row .inv-mat-loc{flex:1.6;min-width:0}
+.inv-rm-btn{background:var(--color-background-tertiary);border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);font-size:12px;flex-shrink:0;padding:0}
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:99}
 .lightbox.open{display:flex}
 .lightbox img{max-width:92%;max-height:88%;border-radius:var(--border-radius-md)}
@@ -141,8 +147,9 @@ textarea{resize:vertical;min-height:80px}
   </div>
 
   <div class="tab-bar">
-    <div class="tab active" onclick="switchTab('boss')"><i class="ti ti-clipboard-list"></i> Boss — Dispatch</div>
-    <div class="tab" onclick="switchTab('crew')"><i class="ti ti-users"></i> Crew — My Jobs</div>
+    <div class="tab active" onclick="switchTab('boss')"><i class="ti ti-clipboard-list"></i> Boss</div>
+    <div class="tab" onclick="switchTab('crew')"><i class="ti ti-users"></i> Crew</div>
+    <div class="tab" onclick="switchTab('invoices')"><i class="ti ti-file-invoice"></i> Invoices</div>
   </div>
 
   <!-- BOSS PANEL -->
@@ -159,6 +166,9 @@ textarea{resize:vertical;min-height:80px}
         <input type="tel" id="phone" placeholder="(555) 000-0000" />
       </div>
     </div>
+
+    <label>Email <span style="font-weight:400;font-size:12px">(for sending the invoice later)</span></label>
+    <input type="email" id="email" placeholder="customer@email.com" />
 
     <label>Job site address</label>
     <input type="text" id="address" placeholder="123 Hillside Rd, Walled Lake, MI" />
@@ -262,6 +272,89 @@ textarea{resize:vertical;min-height:80px}
     </div>
     <div id="job-list"></div>
   </div>
+
+  <!-- INVOICES PANEL -->
+  <div class="panel" id="panel-invoices">
+    <div class="toast" id="toast-inv"><i class="ti ti-circle-check"></i> <span id="toast-inv-msg"></span></div>
+
+    <label>Select a job to invoice</label>
+    <select id="inv-job-select" onchange="loadInvoiceFromJob()">
+      <option value="">Choose a job...</option>
+    </select>
+
+    <div id="invoice-empty" class="empty">
+      <i class="ti ti-file-invoice"></i>Pick a job above to build its invoice.
+    </div>
+
+    <div id="invoice-form" style="display:none;margin-top:14px">
+      <div class="row2">
+        <div>
+          <label>Invoice #</label>
+          <input type="text" id="inv-number" />
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="text" id="inv-date" />
+        </div>
+      </div>
+
+      <label>Bill to</label>
+      <input type="text" id="inv-billto" placeholder="Customer name" />
+
+      <label>Customer email <span style="font-weight:400;font-size:12px">(invoice is sent here)</span></label>
+      <input type="email" id="inv-email" placeholder="customer@email.com" />
+
+      <label>Site</label>
+      <input type="text" id="inv-site" placeholder="Job site address" />
+
+      <div class="row2">
+        <div>
+          <label>Foreman</label>
+          <input type="text" id="inv-foreman" />
+        </div>
+        <div>
+          <label>Phase (if needed)</label>
+          <input type="text" id="inv-phase" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label>As per</label>
+          <select id="inv-landvert">
+            <option value="Land">Land</option>
+            <option value="Vertical">Vertical</option>
+          </select>
+        </div>
+        <div>
+          <label>Job complete?</label>
+          <select id="inv-complete">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Materials and locations</label>
+      <div id="inv-materials"></div>
+      <button type="button" class="status-btn" onclick="addInvoiceMaterialRow()" style="margin-top:8px">
+        <i class="ti ti-plus"></i> Add material
+      </button>
+
+      <label>Machine notes/time</label>
+      <textarea id="inv-machine-notes"></textarea>
+
+      <label>Labor notes/time</label>
+      <textarea id="inv-labor-notes"></textarea>
+
+      <label>Other notes</label>
+      <textarea id="inv-other-notes"></textarea>
+
+      <button class="dispatch-btn" id="inv-send-btn" onclick="sendInvoice()" style="margin-top:18px">
+        <i class="ti ti-send"></i> Send Invoice
+      </button>
+    </div>
+  </div>
 </div>
 
 <div class="lightbox" id="lightbox" onclick="closeLightbox()">
@@ -273,6 +366,9 @@ textarea{resize:vertical;min-height:80px}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+<!-- EmailJS (sends the invoice email straight from the app, no backend needed) -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <script>
 const firebaseConfig = {
@@ -286,6 +382,14 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const storage = firebase.storage();
+
+// EmailJS config — replace these 3 placeholders with your real values from emailjs.com
+// (Public Key from Account > General, Service ID from Email Services, Template ID from Email Templates).
+// Invoices can't send until these are filled in.
+const EMAILJS_PUBLIC_KEY = "YOUR_EMAILJS_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID = "YOUR_EMAILJS_SERVICE_ID";
+const EMAILJS_TEMPLATE_ID = "YOUR_EMAILJS_TEMPLATE_ID";
+if(typeof emailjs!=='undefined')emailjs.init({publicKey:EMAILJS_PUBLIC_KEY});
 
 const CREWS={
   vaquero:[{name:'Mike',role:'foreman'},{name:'Zac',role:'foreman'},{name:'Kurt',role:''},{name:'Jonny',role:''},{name:'Zach',role:''}],
@@ -306,6 +410,7 @@ let photos=[],jobs=[],crewFilter='all',activeTeam='',isRecurring=false,crewSubTa
 db.collection('jobs').orderBy('createdAt','desc').onSnapshot(snap=>{
   jobs = snap.docs.map(d=>({id:d.id,...d.data()}));
   renderJobs();
+  renderInvoiceJobPicker();
 }, err=>{
   console.error('Firestore sync error:', err);
   showToast('Sync error — check your connection or Firestore rules', true);
@@ -318,10 +423,13 @@ function updatePriorityDot(){
 }
 
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===(t==='boss'?0:1)));
+  const idx=t==='boss'?0:t==='crew'?1:2;
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===idx));
   document.getElementById('panel-boss').classList.toggle('active',t==='boss');
   document.getElementById('panel-crew').classList.toggle('active',t==='crew');
+  document.getElementById('panel-invoices').classList.toggle('active',t==='invoices');
   if(t==='crew')renderJobs();
+  if(t==='invoices')renderInvoiceJobPicker();
 }
 
 function switchSubTab(btn,tab){
@@ -414,6 +522,7 @@ function removePhoto(i){photos.splice(i,1);renderPreviews();}
 async function dispatchJob(){
   const customer=document.getElementById('customer').value.trim();
   const phone=document.getElementById('phone').value.trim();
+  const email=document.getElementById('email').value.trim();
   const address=document.getElementById('address').value.trim();
   const jobtypes=getSelectedJTs();
   const members=getSelectedMembers();
@@ -443,7 +552,7 @@ async function dispatchJob(){
     }
 
     await jobRef.set({
-      customer,phone,address,jobtypes,members,teamLabel,
+      customer,phone,email,address,jobtypes,members,teamLabel,
       notes,priority,duration,quantities,recurring:isRecurring,
       photos:photoUrls,status:'New',
       time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
@@ -463,7 +572,7 @@ async function dispatchJob(){
 }
 
 function resetForm(){
-  ['customer','phone','address','notes'].forEach(id=>document.getElementById(id).value='');
+  ['customer','phone','email','address','notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('duration').value='';
   document.getElementById('priority-sel').value='';
   document.getElementById('priority-dot').className='priority-dot';
@@ -641,7 +750,131 @@ function deleteJob(id){
 function openLightbox(src){document.getElementById('lightbox-img').src=src;document.getElementById('lightbox').classList.add('open');}
 function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
 
+// ---- Invoices ----
+let invoiceMaterials=[];
+
+function renderInvoiceJobPicker(){
+  const sel=document.getElementById('inv-job-select');
+  if(!sel)return;
+  const current=sel.value;
+  sel.innerHTML='<option value="">Choose a job...</option>'+
+    jobs.map(j=>`<option value="${j.id}">${j.customer||'(no name)'} — ${j.address||''} (${j.date||''})</option>`).join('');
+  if(current && jobs.some(j=>j.id===current)){
+    sel.value=current;
+  }else{
+    document.getElementById('invoice-form').style.display='none';
+    document.getElementById('invoice-empty').style.display='block';
+  }
+}
+
+function loadInvoiceFromJob(){
+  const id=document.getElementById('inv-job-select').value;
+  const form=document.getElementById('invoice-form');
+  const empty=document.getElementById('invoice-empty');
+  if(!id){form.style.display='none';empty.style.display='block';return;}
+  const job=jobs.find(j=>j.id===id);
+  if(!job)return;
+  form.style.display='block';
+  empty.style.display='none';
+
+  const today=new Date();
+  document.getElementById('inv-number').value=
+    `INV-${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}-${id.slice(0,4).toUpperCase()}`;
+  document.getElementById('inv-date').value=today.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('inv-billto').value=job.customer||'';
+  document.getElementById('inv-email').value=job.email||'';
+  document.getElementById('inv-site').value=job.address||'';
+
+  const allMembers=[...CREWS.vaquero,...CREWS.crew2,...CREWS.solo];
+  const foreman=(job.members||[]).find(name=>allMembers.some(m=>m.name===name&&m.role==='foreman'));
+  document.getElementById('inv-foreman').value=foreman||(job.members?job.members.join(', '):'');
+
+  document.getElementById('inv-phase').value='';
+  document.getElementById('inv-landvert').value='Land';
+  document.getElementById('inv-complete').value=job.status==='Done'?'Yes':'No';
+
+  invoiceMaterials=(job.quantities&&Object.keys(job.quantities).length)
+    ? Object.entries(job.quantities).map(([t,q])=>({material:`${t} (${unitFor(t)})`,qty:q,location:''}))
+    : (job.jobtypes||[]).map(t=>({material:t,qty:'',location:''}));
+  renderInvoiceMaterials();
+
+  document.getElementById('inv-machine-notes').value='';
+  document.getElementById('inv-labor-notes').value=(job.crewNotes||[]).map(n=>`${n.text} (${n.date} ${n.time})`).join('\n');
+  document.getElementById('inv-other-notes').value=job.notes||'';
+}
+
+function renderInvoiceMaterials(){
+  const c=document.getElementById('inv-materials');
+  c.innerHTML=invoiceMaterials.map((m,i)=>`
+    <div class="inv-mat-row">
+      <input type="text" class="inv-mat-name" placeholder="Material" value="${m.material}" oninput="invoiceMaterials[${i}].material=this.value" />
+      <input type="text" class="inv-mat-qty" placeholder="Qty" value="${m.qty}" oninput="invoiceMaterials[${i}].qty=this.value" />
+      <input type="text" class="inv-mat-loc" placeholder="Location" value="${m.location||''}" oninput="invoiceMaterials[${i}].location=this.value" />
+      <button type="button" class="inv-rm-btn" onclick="removeInvoiceMaterialRow(${i})" aria-label="Remove material"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+}
+function addInvoiceMaterialRow(){invoiceMaterials.push({material:'',qty:'',location:''});renderInvoiceMaterials();}
+function removeInvoiceMaterialRow(i){invoiceMaterials.splice(i,1);renderInvoiceMaterials();}
+
+function showInvoiceToast(msg,isError){
+  const t=document.getElementById('toast-inv');
+  document.getElementById('toast-inv-msg').textContent=msg;
+  t.classList.toggle('error',!!isError);
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+async function sendInvoice(){
+  const email=document.getElementById('inv-email').value.trim();
+  const billTo=document.getElementById('inv-billto').value.trim();
+  if(!email){showInvoiceToast('Add a customer email before sending',true);return;}
+  if(!billTo){showInvoiceToast('Add a bill-to name before sending',true);return;}
+  if(typeof emailjs==='undefined'||EMAILJS_PUBLIC_KEY.startsWith('YOUR_')){
+    showInvoiceToast('Email sending isn\'t set up yet — add your EmailJS keys first',true);
+    return;
+  }
+
+  const sendBtn=document.getElementById('inv-send-btn');
+  const originalHtml=sendBtn.innerHTML;
+  sendBtn.disabled=true;
+  sendBtn.innerHTML='<i class="ti ti-loader-2"></i> Sending...';
+
+  const materialsText=invoiceMaterials
+    .filter(m=>m.material)
+    .map(m=>`${m.material} — Qty: ${m.qty||'-'}${m.location?` — Location: ${m.location}`:''}`)
+    .join('\n');
+
+  const params={
+    to_email:email,
+    to_name:billTo,
+    invoice_number:document.getElementById('inv-number').value,
+    invoice_date:document.getElementById('inv-date').value,
+    site:document.getElementById('inv-site').value,
+    foreman:document.getElementById('inv-foreman').value,
+    phase:document.getElementById('inv-phase').value,
+    land_or_vertical:document.getElementById('inv-landvert').value,
+    job_complete:document.getElementById('inv-complete').value,
+    materials_list:materialsText,
+    machine_notes:document.getElementById('inv-machine-notes').value,
+    labor_notes:document.getElementById('inv-labor-notes').value,
+    other_notes:document.getElementById('inv-other-notes').value,
+    from_name:'Clearwater Erosion Control Inc.'
+  };
+
+  try{
+    await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,params);
+    showInvoiceToast(`Invoice sent to ${email}`);
+  }catch(err){
+    console.error('Invoice send failed:',err);
+    showInvoiceToast('Could not send invoice — check your connection and EmailJS setup',true);
+  }finally{
+    sendBtn.disabled=false;
+    sendBtn.innerHTML=originalHtml;
+  }
+}
+
 renderJobs();
+renderInvoiceJobPicker();
 </script>
 </body>
 </html>
