@@ -292,6 +292,13 @@ const CREWS={
   solo:[{name:'Trav',role:''}]
 };
 
+const JOB_TYPE_UNITS={
+  'Silt Fence (2ft)':'ft','Silt Fence (3ft)':'ft','High Flow':'ft','Tree Fence':'ft','Silt Saver':'ft',
+  'Ventrac':'hrs','Weed Whip':'hrs',
+  'Mulch Blankets':'Qty','Waddles':'Qty','Rakes':'Qty','Staples':'Qty'
+};
+function unitFor(jobType){return JOB_TYPE_UNITS[jobType]||'ft';}
+
 let photos=[],jobs=[],crewFilter='all',activeTeam='',isRecurring=false,crewSubTab='active',jobtypeQuantities={},pendingUpdates={};
 
 // Live sync: Firestore pushes updates to every connected device in real time.
@@ -378,7 +385,7 @@ function renderQtyInputs(){
       <span class="qty-label">${t}</span>
       <div class="input-unit">
         <input type="number" min="0" placeholder="0" class="qty-input" value="${jobtypeQuantities[t]}" />
-        <span class="unit">ft</span>
+        <span class="unit">${unitFor(t)}</span>
       </div>
     </div>`).join('');
   container.querySelectorAll('.qty-input').forEach((inp,i)=>{
@@ -513,7 +520,7 @@ function renderJobs(){
       ${(j.duration||j.footage||(j.quantities&&Object.keys(j.quantities).length))?`<div class="job-detail-row">
         ${j.duration?`<span><i class="ti ti-clock"></i> ${j.duration}</span>`:''}
         ${j.footage?`<span><i class="ti ti-ruler"></i> ${j.footage} ft</span>`:''}
-        ${j.quantities?Object.entries(j.quantities).map(([t,q])=>`<span><i class="ti ti-ruler"></i> ${t}: ${q} ft</span>`).join(''):''}
+        ${j.quantities?Object.entries(j.quantities).map(([t,q])=>`<span><i class="ti ti-ruler"></i> ${t}: ${q} ${unitFor(t)}</span>`).join(''):''}
       </div>`:''}
       <div style="font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:4px;color:var(--color-text-secondary)">
         <i class="ti ti-map-pin" style="font-size:13px"></i> ${j.address}
