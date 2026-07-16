@@ -48,10 +48,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand-accent)}
 textarea{resize:vertical;min-height:80px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-.qty-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.qty-row{display:flex;align-items:center;gap:8px;margin-top:8px}
 .qty-row:first-child{margin-top:6px}
-.qty-row .qty-label{font-size:13px;color:var(--color-text-primary);flex:1}
-.qty-row .input-unit{width:120px;flex-shrink:0}
+.qty-row .qty-label{font-size:13px;color:var(--color-text-primary);flex:1;min-width:0}
+.qty-row .qty-input{width:64px;flex-shrink:0;padding:9px 8px;text-align:center}
+.unit-toggle{display:flex;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden;flex-shrink:0}
+.unit-btn{font-size:12px;padding:8px 10px;border:none;background:#fff;color:var(--color-text-secondary);cursor:pointer;font-family:var(--font-sans);transition:all .15s}
+.unit-btn:hover{background:var(--color-background-secondary)}
+.unit-btn.selected{background:var(--brand-accent-light);color:var(--brand-primary-dark);font-weight:600}
+.unit-btn+.unit-btn{border-left:0.5px solid var(--color-border-secondary)}
 .job-type-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
 .jt-btn{font-size:13px;padding:7px 13px;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:#fff;color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s;user-select:none}
 .jt-btn:hover{background:var(--color-background-secondary)}
@@ -93,9 +98,6 @@ textarea{resize:vertical;min-height:80px}
 .priority-dot.low{background:#3DB85C}
 .priority-dot.med{background:#F5C518}
 .priority-dot.high{background:#E63B3B}
-.input-unit{position:relative}
-.input-unit input{padding-right:40px}
-.input-unit .unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--color-text-secondary);pointer-events:none}
 .dispatch-btn{width:100%;margin-top:18px;padding:13px;background:var(--brand-primary);color:#fff;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font-sans);display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
 .dispatch-btn:hover{background:var(--brand-primary-dark)}
 .dispatch-btn:disabled{background:var(--brand-disabled);cursor:not-allowed}
@@ -276,8 +278,8 @@ textarea{resize:vertical;min-height:80px}
 
     <label>Assign crew</label>
     <div class="crew-team-row">
-      <button class="ct-btn" onclick="selectTeam(this,'vaquero')">Vaquero's</button>
-      <button class="ct-btn" onclick="selectTeam(this,'crew2')">Crew 2</button>
+      <button class="ct-btn" onclick="selectTeam(this,'vaquero')">Vaquero's Crew</button>
+      <button class="ct-btn" onclick="selectTeam(this,'crew2')">Otis's Crew</button>
       <button class="ct-btn" onclick="selectTeam(this,'all')">All / Mixed</button>
     </div>
     <div class="member-grid" id="member-grid"></div>
@@ -597,6 +599,13 @@ if('serviceWorker' in navigator){
 
 function unitFor(jobType){return JOB_TYPE_UNITS[jobType]||'ft';}
 
+// Quantities used to be stored as a plain string ("500") with the unit
+// implied by JOB_TYPE_UNITS. The Boss can now override the unit per job type
+// at dispatch/edit time, so newer jobs store {qty,unit} instead. These two
+// helpers read either shape so older jobs already in Firestore keep working.
+function qtyOf(entry){return (entry && typeof entry==='object')?(entry.qty||''):(entry||'');}
+function unitOf(jobType,entry){return (entry && typeof entry==='object' && entry.unit)?entry.unit:unitFor(jobType);}
+
 let photos=[],jobs=[],crewFilter='all',activeTeam='',isRecurring=false,crewSubTab='active',jobtypeQuantities={},pendingUpdates={};
 let sentInvoices=[],invoiceSubTab='new';
 let editingJobId=null,editIsRecurring=false,editJobtypeQuantities={};
@@ -797,7 +806,10 @@ function getSelectedJTs(){return [...document.querySelectorAll('#job-type-grid .
 function renderQtyInputs(){
   const selected=getSelectedJTs();
   const carried={};
-  selected.forEach(t=>{carried[t]=jobtypeQuantities[t]||'';});
+  selected.forEach(t=>{
+    const existing=jobtypeQuantities[t];
+    carried[t]=(existing && typeof existing==='object')?existing:{qty:existing||'',unit:unitFor(t)};
+  });
   jobtypeQuantities=carried;
 
   const section=document.getElementById('qty-section');
@@ -808,17 +820,27 @@ function renderQtyInputs(){
     return;
   }
   section.style.display='block';
-  container.innerHTML=selected.map(t=>`
+  container.innerHTML=selected.map(t=>{
+    const entry=jobtypeQuantities[t];
+    return `
     <div class="qty-row">
       <span class="qty-label">${t}</span>
-      <div class="input-unit">
-        <input type="number" min="0" placeholder="0" class="qty-input" value="${jobtypeQuantities[t]}" />
-        <span class="unit">${unitFor(t)}</span>
+      <input type="number" min="0" placeholder="0" class="qty-input" value="${entry.qty}" />
+      <div class="unit-toggle">
+        <button type="button" class="unit-btn${entry.unit==='ft'?' selected':''}" onclick="setJTUnit(this,'${t}','ft')">ft</button>
+        <button type="button" class="unit-btn${entry.unit==='Qty'?' selected':''}" onclick="setJTUnit(this,'${t}','Qty')">Qty</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   container.querySelectorAll('.qty-input').forEach((inp,i)=>{
-    inp.addEventListener('input',()=>{jobtypeQuantities[selected[i]]=inp.value;});
+    inp.addEventListener('input',()=>{jobtypeQuantities[selected[i]].qty=inp.value;});
   });
+}
+
+function setJTUnit(btn,jobType,unit){
+  jobtypeQuantities[jobType].unit=unit;
+  btn.parentElement.querySelectorAll('.unit-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
 }
 
 function handlePhotos(e){
@@ -848,12 +870,15 @@ async function dispatchJob(){
   const notes=document.getElementById('notes').value.trim();
   const duration=document.getElementById('duration').value;
   const quantities={};
-  jobtypes.forEach(t=>{if(jobtypeQuantities[t])quantities[t]=jobtypeQuantities[t];});
+  jobtypes.forEach(t=>{
+    const entry=jobtypeQuantities[t];
+    if(entry && qtyOf(entry))quantities[t]={qty:qtyOf(entry),unit:unitOf(t,entry)};
+  });
   const priority=document.getElementById('priority-sel').value;
   if(!customer||!address||!jobtypes.length||!members.length||!priority){
     alert('Please fill in: job site, address, at least one job type, priority, and at least one crew member.');return;
   }
-  const teamLabel=activeTeam==='vaquero'?"Vaquero's Crew":activeTeam==='crew2'?'Crew 2':'Mixed';
+  const teamLabel=activeTeam==='vaquero'?"Vaquero's Crew":activeTeam==='crew2'?"Otis's Crew":'Mixed';
   const payload={customer,phone,email,address,jobtypes,members,teamLabel,notes,priority,duration,quantities,recurring:isRecurring,photosData:[...photos]};
 
   const dispatchBtn=document.querySelector('.dispatch-btn');
@@ -954,7 +979,7 @@ function renderSummary(){
     const inLastWeek=jd && jd>=weekAgo;
     if(inLastWeek && j.quantities){
       Object.entries(j.quantities).forEach(([t,q])=>{
-        if(unitFor(t)==='ft')footage+=parseFloat(q)||0;
+        if(unitOf(t,q)==='ft')footage+=parseFloat(qtyOf(q))||0;
       });
     }
     if(inLastWeek && j.status==='Done')jobsCompleted++;
@@ -998,7 +1023,7 @@ function renderJobs(){
       ${(j.duration||j.footage||(j.quantities&&Object.keys(j.quantities).length))?`<div class="job-detail-row">
         ${j.duration?`<span><i class="ti ti-clock"></i> ${j.duration}</span>`:''}
         ${j.footage?`<span><i class="ti ti-ruler"></i> ${j.footage} ft</span>`:''}
-        ${j.quantities?Object.entries(j.quantities).map(([t,q])=>`<span><i class="ti ti-ruler"></i> ${t}: ${q} ${unitFor(t)}</span>`).join(''):''}
+        ${j.quantities?Object.entries(j.quantities).map(([t,q])=>`<span><i class="ti ti-ruler"></i> ${t}: ${qtyOf(q)} ${unitOf(t,q)}</span>`).join(''):''}
       </div>`:''}
       <div style="font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:4px;color:var(--color-text-secondary)">
         <i class="ti ti-map-pin" style="font-size:13px"></i> ${j.address}
@@ -1201,7 +1226,10 @@ function getEditSelectedMembers(){return [...document.querySelectorAll('#edit-me
 function renderEditQtyInputs(){
   const selected=getEditSelectedJTs();
   const carried={};
-  selected.forEach(t=>{carried[t]=editJobtypeQuantities[t]||'';});
+  selected.forEach(t=>{
+    const existing=editJobtypeQuantities[t];
+    carried[t]=(existing && typeof existing==='object')?existing:{qty:existing||'',unit:unitFor(t)};
+  });
   editJobtypeQuantities=carried;
 
   const section=document.getElementById('edit-qty-section');
@@ -1212,17 +1240,27 @@ function renderEditQtyInputs(){
     return;
   }
   section.style.display='block';
-  container.innerHTML=selected.map(t=>`
+  container.innerHTML=selected.map(t=>{
+    const entry=editJobtypeQuantities[t];
+    return `
     <div class="qty-row">
       <span class="qty-label">${t}</span>
-      <div class="input-unit">
-        <input type="number" min="0" placeholder="0" class="edit-qty-input" value="${editJobtypeQuantities[t]}" />
-        <span class="unit">${unitFor(t)}</span>
+      <input type="number" min="0" placeholder="0" class="edit-qty-input" value="${entry.qty}" />
+      <div class="unit-toggle">
+        <button type="button" class="unit-btn${entry.unit==='ft'?' selected':''}" onclick="setEditJTUnit(this,'${t}','ft')">ft</button>
+        <button type="button" class="unit-btn${entry.unit==='Qty'?' selected':''}" onclick="setEditJTUnit(this,'${t}','Qty')">Qty</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   container.querySelectorAll('.edit-qty-input').forEach((inp,i)=>{
-    inp.addEventListener('input',()=>{editJobtypeQuantities[selected[i]]=inp.value;});
+    inp.addEventListener('input',()=>{editJobtypeQuantities[selected[i]].qty=inp.value;});
   });
+}
+
+function setEditJTUnit(btn,jobType,unit){
+  editJobtypeQuantities[jobType].unit=unit;
+  btn.parentElement.querySelectorAll('.unit-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
 }
 
 function toggleEditRecurring(){
@@ -1249,7 +1287,10 @@ async function saveEditedJob(){
     return;
   }
   const quantities={};
-  jobtypes.forEach(t=>{if(editJobtypeQuantities[t])quantities[t]=editJobtypeQuantities[t];});
+  jobtypes.forEach(t=>{
+    const entry=editJobtypeQuantities[t];
+    if(entry && qtyOf(entry))quantities[t]={qty:qtyOf(entry),unit:unitOf(t,entry)};
+  });
 
   const saveBtn=document.querySelector('#edit-overlay .dispatch-btn');
   const originalHtml=saveBtn.innerHTML;
@@ -1326,7 +1367,7 @@ function loadInvoiceFromJob(){
   document.getElementById('inv-amount').value='';
 
   invoiceMaterials=(job.quantities&&Object.keys(job.quantities).length)
-    ? Object.entries(job.quantities).map(([t,q])=>({material:`${t} (${unitFor(t)})`,qty:q,location:''}))
+    ? Object.entries(job.quantities).map(([t,q])=>({material:`${t} (${unitOf(t,q)})`,qty:qtyOf(q),location:''}))
     : (job.jobtypes||[]).map(t=>({material:t,qty:'',location:''}));
   renderInvoiceMaterials();
 
