@@ -67,3 +67,6 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Local sync-bridge lock/backup artifacts (Cowork's file bridge to this Mac)
+.bridge-cleanup-ignore/
