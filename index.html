@@ -146,6 +146,14 @@ textarea{resize:vertical;min-height:80px}
 .lightbox.open{display:flex}
 .lightbox img{max-width:92%;max-height:88%;border-radius:var(--border-radius-md)}
 .lightbox-close{position:absolute;top:18px;right:18px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.password-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.password-overlay.open{display:flex}
+.password-box{background:#fff;border-radius:var(--border-radius-lg);padding:28px 24px;max-width:320px;width:100%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.password-box i{font-size:32px;color:var(--brand-primary);display:block;margin-bottom:8px}
+.password-box h2{font-size:17px;font-weight:600;margin-bottom:6px}
+.password-box p{font-size:13px;color:var(--color-text-secondary);margin-bottom:16px}
+.password-box input{text-align:center;margin-bottom:6px}
+.password-error{font-size:12px;color:#D85A30;margin-bottom:10px;display:none}
 </style>
 </head>
 <body>
@@ -156,13 +164,13 @@ textarea{resize:vertical;min-height:80px}
   </div>
 
   <div class="tab-bar">
-    <div class="tab active" onclick="switchTab('boss')"><i class="ti ti-clipboard-list"></i> Boss</div>
-    <div class="tab" onclick="switchTab('crew')"><i class="ti ti-users"></i> Crew</div>
+    <div class="tab" onclick="requestBossAccess()"><i class="ti ti-lock"></i> Boss</div>
+    <div class="tab active" onclick="switchTab('crew')"><i class="ti ti-users"></i> Crew</div>
     <div class="tab" onclick="switchTab('invoices')"><i class="ti ti-file-invoice"></i> Invoices</div>
   </div>
 
   <!-- BOSS PANEL -->
-  <div class="panel active" id="panel-boss">
+  <div class="panel" id="panel-boss">
     <div class="toast" id="toast"><i class="ti ti-circle-check"></i> <span id="toast-msg"></span></div>
 
     <div class="row2">
@@ -250,7 +258,7 @@ textarea{resize:vertical;min-height:80px}
   </div>
 
   <!-- CREW PANEL -->
-  <div class="panel" id="panel-crew">
+  <div class="panel active" id="panel-crew">
     <div class="sub-tab-bar">
       <button class="sub-tab active" onclick="switchSubTab(this,'active')"><i class="ti ti-list-check"></i> Active Jobs</button>
       <button class="sub-tab" onclick="switchSubTab(this,'history')"><i class="ti ti-archive"></i> Job History</button>
@@ -361,6 +369,18 @@ textarea{resize:vertical;min-height:80px}
   <img id="lightbox-img" src="" alt="Job site photo" />
 </div>
 
+<div class="password-overlay" id="password-overlay">
+  <div class="password-box">
+    <i class="ti ti-lock"></i>
+    <h2>Boss Access</h2>
+    <p>Enter the password to open the dispatch tab.</p>
+    <input type="password" id="boss-password-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkBossPassword()" />
+    <div class="password-error" id="password-error" style="display:none">Incorrect password</div>
+    <button class="dispatch-btn" onclick="checkBossPassword()">Unlock</button>
+    <button class="status-btn" onclick="closePasswordOverlay()" style="margin-top:10px;justify-content:center;width:100%">Cancel</button>
+  </div>
+</div>
+
 <!-- Firebase (compat build so the rest of this file can keep using plain global functions/onclick handlers) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -412,6 +432,11 @@ const JOB_TYPE_UNITS={
   'Ventrac':'hrs','Weed Whip':'hrs',
   'Mulch Blankets':'Qty','Waddles':'Qty','Rakes':'Qty','Staples':'Qty'
 };
+
+// Password gating the Boss tab. This is a simple deterrent, not real security —
+// anyone who views this file's source can find it. Good enough to keep casual
+// crew members out; change it any time by editing this value.
+const BOSS_PASSWORD = "Clearwater2026";
 
 /* ================================================================
    END COMPANY CONFIG — nothing below this line should need editing
@@ -465,6 +490,39 @@ function switchTab(t){
   document.getElementById('panel-invoices').classList.toggle('active',t==='invoices');
   if(t==='crew')renderJobs();
   if(t==='invoices')renderInvoiceJobPicker();
+}
+
+// --- Boss tab password gate ---
+// A simple deterrent (not real security) so casual crew members don't wander
+// into the dispatch tab. Once unlocked, this device stays unlocked.
+function isBossUnlocked(){
+  return localStorage.getItem('boss_unlocked')==='true';
+}
+
+function requestBossAccess(){
+  if(isBossUnlocked()){
+    switchTab('boss');
+    return;
+  }
+  document.getElementById('password-overlay').classList.add('open');
+  document.getElementById('boss-password-input').value='';
+  document.getElementById('password-error').style.display='none';
+  setTimeout(()=>document.getElementById('boss-password-input').focus(),50);
+}
+
+function closePasswordOverlay(){
+  document.getElementById('password-overlay').classList.remove('open');
+}
+
+function checkBossPassword(){
+  const val=document.getElementById('boss-password-input').value;
+  if(val===BOSS_PASSWORD){
+    localStorage.setItem('boss_unlocked','true');
+    closePasswordOverlay();
+    switchTab('boss');
+  }else{
+    document.getElementById('password-error').style.display='block';
+  }
 }
 
 function switchSubTab(btn,tab){
@@ -1018,6 +1076,7 @@ renderCrewFilterChips();
 renderJobs();
 renderInvoiceJobPicker();
 renderInvoiceHistory();
+if(isBossUnlocked())switchTab('boss');
 </script>
 </body>
 </html>
