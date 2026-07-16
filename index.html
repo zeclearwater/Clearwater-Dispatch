@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Clearwater Dispatch</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0E7490" />
+<link rel="apple-touch-icon" href="icon-192.png" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.6.0/dist/tabler-icons.min.css" />
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -154,10 +157,28 @@ textarea{resize:vertical;min-height:80px}
 .password-box p{font-size:13px;color:var(--color-text-secondary);margin-bottom:16px}
 .password-box input{text-align:center;margin-bottom:6px}
 .password-error{font-size:12px;color:#D85A30;margin-bottom:10px;display:none}
+.offline-banner{background:#FBE7E5;color:#8A2A1D;font-size:12px;text-align:center;padding:7px 14px;display:none;align-items:center;justify-content:center;gap:6px;line-height:1.3}
+.offline-banner.show{display:flex}
+.summary-box{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:18px}
+.summary-header{font-size:13px;font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.summary-tile{text-align:center}
+.summary-value{font-size:20px;font-weight:700;color:var(--brand-primary-dark)}
+.summary-label{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:20px;overflow-y:auto}
+.edit-overlay.open{display:flex}
+.edit-box{background:#fff;border-radius:var(--border-radius-lg);padding:20px;max-width:460px;width:100%;margin:20px 0;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.edit-box-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.edit-box-header h2{font-size:16px;font-weight:600;display:flex;align-items:center;gap:6px}
+.edit-close-btn{background:transparent;border:none;color:var(--color-text-secondary);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%}
+.edit-close-btn:hover{background:var(--color-background-secondary)}
 </style>
 </head>
 <body>
 <div class="app-wrap">
+  <div class="offline-banner" id="offline-banner">
+    <i class="ti ti-wifi-off"></i> <span id="offline-banner-text"></span>
+  </div>
   <div class="app-header">
     <img class="logo-mark" id="app-logo" src="" alt="" />
     <h1>Clearwater Dispatch</h1>
@@ -169,9 +190,30 @@ textarea{resize:vertical;min-height:80px}
     <div class="tab" onclick="switchTab('invoices')"><i class="ti ti-file-invoice"></i> Invoices</div>
   </div>
 
+  <!-- Page-level toast host: lives outside the panels so it stays visible
+       no matter which tab is active (mark done / save update / edit job
+       are all triggered from the Crew tab, not just the Boss tab). -->
+  <div class="toast" id="toast" style="margin:14px 14px 0"><i class="ti ti-circle-check"></i> <span id="toast-msg"></span></div>
+
   <!-- BOSS PANEL -->
   <div class="panel" id="panel-boss">
-    <div class="toast" id="toast"><i class="ti ti-circle-check"></i> <span id="toast-msg"></span></div>
+    <div class="summary-box" id="summary-box">
+      <div class="summary-header"><i class="ti ti-chart-bar"></i> Last 7 days</div>
+      <div class="summary-grid">
+        <div class="summary-tile">
+          <div class="summary-value" id="summary-footage">0</div>
+          <div class="summary-label">Ft installed</div>
+        </div>
+        <div class="summary-tile">
+          <div class="summary-value" id="summary-jobs">0</div>
+          <div class="summary-label">Jobs completed</div>
+        </div>
+        <div class="summary-tile">
+          <div class="summary-value" id="summary-revenue">$0</div>
+          <div class="summary-label">Invoiced</div>
+        </div>
+      </div>
+    </div>
 
     <div class="row2">
       <div>
@@ -343,6 +385,9 @@ textarea{resize:vertical;min-height:80px}
         <i class="ti ti-plus"></i> Add material
       </button>
 
+      <label>Invoice total ($) <span style="font-weight:400;font-size:12px">(feeds the weekly revenue summary)</span></label>
+      <input type="number" step="0.01" min="0" id="inv-amount" placeholder="0.00" />
+
       <label>Machine notes/time</label>
       <textarea id="inv-machine-notes"></textarea>
 
@@ -378,6 +423,85 @@ textarea{resize:vertical;min-height:80px}
     <div class="password-error" id="password-error" style="display:none">Incorrect password</div>
     <button class="dispatch-btn" onclick="checkBossPassword()">Unlock</button>
     <button class="status-btn" onclick="closePasswordOverlay()" style="margin-top:10px;justify-content:center;width:100%">Cancel</button>
+  </div>
+</div>
+
+<!-- Edit job modal — only reachable once the Boss tab is unlocked -->
+<div class="edit-overlay" id="edit-overlay">
+  <div class="edit-box">
+    <div class="edit-box-header">
+      <h2><i class="ti ti-edit"></i> Edit Job</h2>
+      <button class="edit-close-btn" onclick="closeEditModal()"><i class="ti ti-x"></i></button>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label>Job site</label>
+        <input type="text" id="edit-customer" />
+      </div>
+      <div>
+        <label>Site Super #</label>
+        <input type="tel" id="edit-phone" />
+      </div>
+    </div>
+
+    <label>Email</label>
+    <input type="email" id="edit-email" />
+
+    <label>Job site address</label>
+    <input type="text" id="edit-address" />
+
+    <label>Job type <span style="font-weight:400;font-size:12px">(select all that apply)</span></label>
+    <div class="job-type-grid" id="edit-jt-grid"></div>
+
+    <div id="edit-qty-section" style="display:none;margin-top:14px">
+      <label>Qty / footage</label>
+      <div id="edit-qty-inputs"></div>
+    </div>
+
+    <div class="row2" style="margin-top:14px">
+      <div>
+        <label>Est. duration</label>
+        <select id="edit-duration">
+          <option value="">Select...</option>
+          <option>1 hour</option>
+          <option>2 hours</option>
+          <option>3 hours</option>
+          <option>Half day</option>
+          <option>Full day</option>
+          <option>Multiple days</option>
+        </select>
+      </div>
+      <div>
+        <label>Priority</label>
+        <div class="priority-wrap">
+          <div class="priority-dot" id="edit-priority-dot"></div>
+          <select id="edit-priority-sel" onchange="updateEditPriorityDot()">
+            <option value="">Select...</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <label style="margin-top:14px">Recurring job</label>
+    <div class="toggle-row" id="edit-recurring-toggle" onclick="toggleEditRecurring()">
+      <i class="ti ti-refresh"></i>
+      <span class="toggle-label">Mark as recurring / return visit</span>
+      <div class="toggle-switch" id="edit-recurring-switch"></div>
+    </div>
+
+    <label>Assign crew</label>
+    <div class="member-grid" id="edit-member-grid"></div>
+
+    <label>Job notes</label>
+    <textarea id="edit-notes"></textarea>
+
+    <button class="dispatch-btn" onclick="saveEditedJob()" style="margin-top:18px">
+      <i class="ti ti-device-floppy"></i> Save changes
+    </button>
   </div>
 </div>
 
@@ -453,16 +577,36 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 if(typeof emailjs!=='undefined')emailjs.init({publicKey:EMAILJS_PUBLIC_KEY});
 
+// Offline persistence: Firestore caches reads and queues plain field writes
+// (status changes, note text, edits) locally via IndexedDB and syncs them
+// automatically once the connection returns. This does NOT cover Storage
+// photo uploads, which are handled separately by the pending-ops queue below.
+db.enablePersistence({synchronizeTabs:true}).catch(err=>{
+  if(err.code==='failed-precondition'){
+    console.warn('Offline persistence unavailable: multiple tabs open at once.');
+  }else if(err.code==='unimplemented'){
+    console.warn('Offline persistence not supported in this browser.');
+  }
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=>console.error('Service worker registration failed:',err));
+  });
+}
+
 function unitFor(jobType){return JOB_TYPE_UNITS[jobType]||'ft';}
 
 let photos=[],jobs=[],crewFilter='all',activeTeam='',isRecurring=false,crewSubTab='active',jobtypeQuantities={},pendingUpdates={};
 let sentInvoices=[],invoiceSubTab='new';
+let editingJobId=null,editIsRecurring=false,editJobtypeQuantities={};
 
 // Live sync: Firestore pushes updates to every connected device in real time.
 db.collection('jobs').orderBy('createdAt','desc').onSnapshot(snap=>{
   jobs = snap.docs.map(d=>({id:d.id,...d.data()}));
   renderJobs();
   renderInvoiceJobPicker();
+  renderSummary();
 }, err=>{
   console.error('Firestore sync error:', err);
   showToast('Sync error — check your connection or Firestore rules', true);
@@ -472,9 +616,79 @@ db.collection('jobs').orderBy('createdAt','desc').onSnapshot(snap=>{
 db.collection('invoices').orderBy('sentAt','desc').onSnapshot(snap=>{
   sentInvoices = snap.docs.map(d=>({id:d.id,...d.data()}));
   renderInvoiceHistory();
+  renderSummary();
 }, err=>{
   console.error('Invoice history sync error:', err);
 });
+
+// ---- Offline photo-upload queue ----
+// Firestore field writes (status, notes, edits) are queued automatically by
+// enablePersistence() above. Storage uploads are not, so photos attached
+// while offline are stashed here and retried once the connection returns.
+// Note: this rides on localStorage (a few MB per browser), so it's meant for
+// a modest backlog of photos, not unlimited offline storage.
+const PENDING_KEY='cw_pending_photo_ops';
+
+function getPendingOps(){
+  try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'[]');}catch{return [];}
+}
+function setPendingOps(ops){
+  try{localStorage.setItem(PENDING_KEY,JSON.stringify(ops));return true;}
+  catch(err){console.error('Could not persist offline queue (storage full?):',err);return false;}
+}
+function queuePendingOp(op){
+  const ops=getPendingOps();
+  ops.push(op);
+  if(!setPendingOps(ops)){
+    showToast('Could not save this for offline sync — your device storage may be full',true);
+  }
+  updateOfflineBanner();
+}
+
+async function flushPendingOps(){
+  if(!navigator.onLine)return;
+  const ops=getPendingOps();
+  if(!ops.length){updateOfflineBanner();return;}
+  const remaining=[];
+  for(const op of ops){
+    try{
+      if(op.type==='dispatch'){
+        await performDispatch(op.payload);
+      }else if(op.type==='photo-update'){
+        const photoUrls=[];
+        for(let i=0;i<op.photos.length;i++){
+          const snap=await storage.ref(`jobs/${op.jobId}/update-${Date.now()}-${i}.jpg`).putString(op.photos[i],'data_url');
+          photoUrls.push(await snap.ref.getDownloadURL());
+        }
+        await db.collection('jobs').doc(op.jobId).update({photos:firebase.firestore.FieldValue.arrayUnion(...photoUrls)});
+      }
+    }catch(err){
+      console.error('Retry failed, will try again later:',err);
+      remaining.push(op);
+    }
+  }
+  setPendingOps(remaining);
+  updateOfflineBanner();
+  if(remaining.length<ops.length)showToast('Offline changes synced');
+}
+
+function updateOfflineBanner(){
+  const banner=document.getElementById('offline-banner');
+  const textEl=document.getElementById('offline-banner-text');
+  if(!banner||!textEl)return;
+  const pendingCount=getPendingOps().length;
+  if(!navigator.onLine){
+    banner.classList.add('show');
+    textEl.textContent="You're offline — new dispatches and photo updates will save on this device and sync automatically once you're back in range.";
+  }else if(pendingCount>0){
+    banner.classList.add('show');
+    textEl.textContent=`Back online — syncing ${pendingCount} pending photo update${pendingCount>1?'s':''}...`;
+  }else{
+    banner.classList.remove('show');
+  }
+}
+window.addEventListener('online',()=>{updateOfflineBanner();flushPendingOps();});
+window.addEventListener('offline',updateOfflineBanner);
 
 function updatePriorityDot(){
   const val=document.getElementById('priority-sel').value;
@@ -490,6 +704,7 @@ function switchTab(t){
   document.getElementById('panel-invoices').classList.toggle('active',t==='invoices');
   if(t==='crew')renderJobs();
   if(t==='invoices')renderInvoiceJobPicker();
+  if(t==='boss')renderSummary();
 }
 
 // --- Boss tab password gate ---
@@ -572,9 +787,12 @@ function renderMembers(members,preselect){
 }
 
 function toggleMember(btn){btn.classList.toggle('selected');}
-function getSelectedMembers(){return [...document.querySelectorAll('.m-btn.selected')].map(b=>b.textContent.trim());}
+// Scoped to #member-grid / #job-type-grid specifically — the edit-job modal
+// reuses the same .m-btn/.jt-btn classes in its own grid, so an unscoped
+// query here would also pick up selections made while editing a job.
+function getSelectedMembers(){return [...document.querySelectorAll('#member-grid .m-btn.selected')].map(b=>b.textContent.trim());}
 function toggleJT(btn){btn.classList.toggle('selected');renderQtyInputs();}
-function getSelectedJTs(){return [...document.querySelectorAll('.jt-btn.selected')].map(b=>b.textContent);}
+function getSelectedJTs(){return [...document.querySelectorAll('#job-type-grid .jt-btn.selected')].map(b=>b.textContent);}
 
 function renderQtyInputs(){
   const selected=getSelectedJTs();
@@ -636,6 +854,7 @@ async function dispatchJob(){
     alert('Please fill in: job site, address, at least one job type, priority, and at least one crew member.');return;
   }
   const teamLabel=activeTeam==='vaquero'?"Vaquero's Crew":activeTeam==='crew2'?'Crew 2':'Mixed';
+  const payload={customer,phone,email,address,jobtypes,members,teamLabel,notes,priority,duration,quantities,recurring:isRecurring,photosData:[...photos]};
 
   const dispatchBtn=document.querySelector('.dispatch-btn');
   const originalBtnHtml=dispatchBtn.innerHTML;
@@ -643,33 +862,43 @@ async function dispatchJob(){
   dispatchBtn.innerHTML='<i class="ti ti-loader-2"></i> Dispatching...';
 
   try{
-    const jobRef=db.collection('jobs').doc();
-
-    // Upload any photos to Firebase Storage first, collecting their URLs.
-    const photoUrls=[];
-    for(let i=0;i<photos.length;i++){
-      const snap=await storage.ref(`jobs/${jobRef.id}/photo${i}.jpg`).putString(photos[i],'data_url');
-      photoUrls.push(await snap.ref.getDownloadURL());
-    }
-
-    await jobRef.set({
-      customer,phone,email,address,jobtypes,members,teamLabel,
-      notes,priority,duration,quantities,recurring:isRecurring,
-      photos:photoUrls,status:'New',
-      time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
-      date:new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}),
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
-
+    await performDispatch(payload);
     showToast(`Job dispatched to ${members.join(', ')}`);
     resetForm();
   }catch(err){
-    console.error('Dispatch failed:',err);
-    alert('Could not dispatch job — check your connection and Firestore/Storage setup, then try again.');
+    console.error('Dispatch failed, queueing for retry when back online:',err);
+    queuePendingOp({type:'dispatch',payload});
+    showToast(`No connection — job for ${members.join(', ')} saved on this device and will dispatch once you're back online`,true);
+    resetForm();
   }finally{
     dispatchBtn.disabled=false;
     dispatchBtn.innerHTML=originalBtnHtml;
   }
+}
+
+// The actual Firestore/Storage write, factored out so the offline retry
+// queue (flushPendingOps) can replay it later using the same logic.
+async function performDispatch(payload){
+  const jobRef=db.collection('jobs').doc();
+
+  // Upload any photos to Firebase Storage first, collecting their URLs.
+  // If this throws (e.g. no connection), nothing has been written to
+  // Firestore yet, so the caller can safely queue the whole payload for retry.
+  const photoUrls=[];
+  for(let i=0;i<payload.photosData.length;i++){
+    const snap=await storage.ref(`jobs/${jobRef.id}/photo${i}.jpg`).putString(payload.photosData[i],'data_url');
+    photoUrls.push(await snap.ref.getDownloadURL());
+  }
+
+  await jobRef.set({
+    customer:payload.customer,phone:payload.phone,email:payload.email,address:payload.address,
+    jobtypes:payload.jobtypes,members:payload.members,teamLabel:payload.teamLabel,
+    notes:payload.notes,priority:payload.priority,duration:payload.duration,quantities:payload.quantities,
+    recurring:payload.recurring,photos:photoUrls,status:'New',
+    time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+    date:new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}),
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
 }
 
 function resetForm(){
@@ -677,7 +906,7 @@ function resetForm(){
   document.getElementById('duration').value='';
   document.getElementById('priority-sel').value='';
   document.getElementById('priority-dot').className='priority-dot';
-  document.querySelectorAll('.jt-btn,.ct-btn').forEach(b=>{b.className=b.classList.contains('jt-btn')?'jt-btn':'ct-btn';});
+  document.querySelectorAll('#job-type-grid .jt-btn,.ct-btn').forEach(b=>{b.className=b.classList.contains('jt-btn')?'jt-btn':'ct-btn';});
   jobtypeQuantities={};renderQtyInputs();
   document.getElementById('member-grid').innerHTML='';
   isRecurring=false;
@@ -703,6 +932,44 @@ function filterCrew(chip,val){
 function priBadge(p){
   const cls=p==='Low'?'low':p==='Medium'?'med':'high';
   return `<span class="pri-badge ${cls}"><span class="dot"></span>${p}</span>`;
+}
+
+// Parses the "Jul 14, 2026"-style display strings this app stores for job
+// dates back into a real Date, for the last-7-days summary below.
+function parseDisplayDate(str){
+  if(!str)return null;
+  const d=new Date(str);
+  return isNaN(d.getTime())?null:d;
+}
+
+function renderSummary(){
+  const footageEl=document.getElementById('summary-footage');
+  if(!footageEl)return; // summary box only exists in the Boss panel
+
+  const weekAgo=new Date(Date.now()-7*24*60*60*1000);
+  let footage=0, jobsCompleted=0, revenue=0;
+
+  jobs.forEach(j=>{
+    const jd=parseDisplayDate(j.date);
+    const inLastWeek=jd && jd>=weekAgo;
+    if(inLastWeek && j.quantities){
+      Object.entries(j.quantities).forEach(([t,q])=>{
+        if(unitFor(t)==='ft')footage+=parseFloat(q)||0;
+      });
+    }
+    if(inLastWeek && j.status==='Done')jobsCompleted++;
+  });
+
+  sentInvoices.forEach(inv=>{
+    let sentDate=null;
+    if(inv.sentAt && typeof inv.sentAt.toDate==='function')sentDate=inv.sentAt.toDate();
+    else sentDate=parseDisplayDate(inv.invoiceDate);
+    if(sentDate && sentDate>=weekAgo)revenue+=parseFloat(inv.amount)||0;
+  });
+
+  footageEl.textContent=footage.toLocaleString();
+  document.getElementById('summary-jobs').textContent=jobsCompleted;
+  document.getElementById('summary-revenue').textContent='$'+revenue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
 function renderJobs(){
@@ -753,6 +1020,7 @@ function renderJobs(){
         </button>
       </div>`:''}
       <div class="status-row">
+        ${isBossUnlocked()?`<button class="status-btn" onclick="openEditJob('${j.id}')"><i class="ti ti-edit"></i> Edit</button>`:''}
         ${!isHistory
           ?`<button class="status-btn" onclick="toggleUpdatePanel('${j.id}')"><i class="ti ti-note"></i> Add note/photo</button>
              <button class="status-btn" onclick="markDone('${j.id}')"><i class="ti ti-circle-check"></i> Mark as done</button>`
@@ -807,19 +1075,40 @@ async function saveUpdate(id){
   if(saveBtn){saveBtn.disabled=true;saveBtn.innerHTML='<i class="ti ti-loader-2"></i> Saving...';}
 
   try{
-    const photoUrls=[];
-    for(let i=0;i<newPhotos.length;i++){
-      const snap=await storage.ref(`jobs/${id}/update-${Date.now()}-${i}.jpg`).putString(newPhotos[i],'data_url');
-      photoUrls.push(await snap.ref.getDownloadURL());
+    // Note text goes through Firestore directly — thanks to offline
+    // persistence this queues and syncs on its own even with no connection,
+    // so it's safe to await unconditionally here.
+    if(noteText){
+      await db.collection('jobs').doc(id).update({
+        crewNotes:firebase.firestore.FieldValue.arrayUnion({
+          text:noteText,
+          time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+          date:new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'})
+        })
+      });
     }
-    const updateData={};
-    if(photoUrls.length)updateData.photos=firebase.firestore.FieldValue.arrayUnion(...photoUrls);
-    if(noteText)updateData.crewNotes=firebase.firestore.FieldValue.arrayUnion({
-      text:noteText,
-      time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
-      date:new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'})
-    });
-    await db.collection('jobs').doc(id).update(updateData);
+
+    if(newPhotos.length){
+      try{
+        const photoUrls=[];
+        for(let i=0;i<newPhotos.length;i++){
+          const snap=await storage.ref(`jobs/${id}/update-${Date.now()}-${i}.jpg`).putString(newPhotos[i],'data_url');
+          photoUrls.push(await snap.ref.getDownloadURL());
+        }
+        await db.collection('jobs').doc(id).update({photos:firebase.firestore.FieldValue.arrayUnion(...photoUrls)});
+      }catch(photoErr){
+        // Storage uploads aren't covered by Firestore's offline persistence,
+        // so queue just the photos for retry — the note above is already saved.
+        console.error('Photo upload failed, queueing for retry when back online:',photoErr);
+        queuePendingOp({type:'photo-update',jobId:id,photos:[...newPhotos]});
+        pendingUpdates[id]=[];
+        if(noteEl)noteEl.value='';
+        renderUpdatePreviews(id);
+        toggleUpdatePanel(id);
+        showToast(noteText?'Note saved. Photos will upload once you\'re back online.':'No connection — photos will upload once you\'re back online.',true);
+        return;
+      }
+    }
 
     pendingUpdates[id]=[];
     if(noteEl)noteEl.value='';
@@ -835,7 +1124,23 @@ async function saveUpdate(id){
 }
 
 function markDone(id){
-  db.collection('jobs').doc(id).update({status:'Done'}).catch(err=>{console.error(err);showToast('Could not update job',true);});
+  // Grab the job's details before the status update, in case it's recurring
+  // and needs the next occurrence auto-created right after.
+  const job=jobs.find(j=>j.id===id);
+  db.collection('jobs').doc(id).update({status:'Done'}).then(()=>{
+    if(job && job.recurring){
+      return db.collection('jobs').add({
+        customer:job.customer,phone:job.phone,email:job.email,address:job.address,
+        jobtypes:job.jobtypes,members:job.members,teamLabel:job.teamLabel,
+        notes:job.notes,priority:job.priority,duration:job.duration,quantities:job.quantities,
+        recurring:true,photos:[],crewNotes:[],status:'New',
+        time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+        date:new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}),
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      }).then(()=>showToast('Job completed — next recurring visit auto-scheduled'));
+    }
+    showToast('Job marked done');
+  }).catch(err=>{console.error(err);showToast('Could not update job',true);});
 }
 function restoreJob(id){
   db.collection('jobs').doc(id).update({status:'New'}).then(()=>{
@@ -850,6 +1155,131 @@ function deleteJob(id){
 }
 function openLightbox(src){document.getElementById('lightbox-img').src=src;document.getElementById('lightbox').classList.add('open');}
 function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
+
+// ---- Edit job (Boss tab only) ----
+function openEditJob(id){
+  const job=jobs.find(j=>j.id===id);
+  if(!job)return;
+  editingJobId=id;
+
+  document.getElementById('edit-customer').value=job.customer||'';
+  document.getElementById('edit-phone').value=job.phone||'';
+  document.getElementById('edit-email').value=job.email||'';
+  document.getElementById('edit-address').value=job.address||'';
+  document.getElementById('edit-notes').value=job.notes||'';
+  document.getElementById('edit-duration').value=job.duration||'';
+  document.getElementById('edit-priority-sel').value=job.priority||'';
+  updateEditPriorityDot();
+
+  editIsRecurring=!!job.recurring;
+  document.getElementById('edit-recurring-toggle').classList.toggle('active',editIsRecurring);
+  document.getElementById('edit-recurring-switch').classList.toggle('on',editIsRecurring);
+
+  document.getElementById('edit-jt-grid').innerHTML=Object.keys(JOB_TYPE_UNITS).map(t=>
+    `<button type="button" class="jt-btn${(job.jobtypes||[]).includes(t)?' selected':''}" onclick="toggleEditJT(this)">${t}</button>`).join('');
+  editJobtypeQuantities={...(job.quantities||{})};
+  renderEditQtyInputs();
+
+  const allMembers=[...CREWS.vaquero,...CREWS.crew2,...CREWS.solo];
+  document.getElementById('edit-member-grid').innerHTML=allMembers.map(m=>
+    `<button type="button" class="m-btn${(job.members||[]).includes(m.name)?' selected':''}" onclick="toggleMember(this)">
+      ${m.name}${m.role?`<span class="role"><i class="ti ti-star-filled"></i></span>`:''}
+    </button>`).join('');
+
+  document.getElementById('edit-overlay').classList.add('open');
+}
+
+function closeEditModal(){
+  document.getElementById('edit-overlay').classList.remove('open');
+  editingJobId=null;
+}
+
+function toggleEditJT(btn){btn.classList.toggle('selected');renderEditQtyInputs();}
+function getEditSelectedJTs(){return [...document.querySelectorAll('#edit-jt-grid .jt-btn.selected')].map(b=>b.textContent);}
+function getEditSelectedMembers(){return [...document.querySelectorAll('#edit-member-grid .m-btn.selected')].map(b=>b.textContent.trim());}
+
+function renderEditQtyInputs(){
+  const selected=getEditSelectedJTs();
+  const carried={};
+  selected.forEach(t=>{carried[t]=editJobtypeQuantities[t]||'';});
+  editJobtypeQuantities=carried;
+
+  const section=document.getElementById('edit-qty-section');
+  const container=document.getElementById('edit-qty-inputs');
+  if(!selected.length){
+    section.style.display='none';
+    container.innerHTML='';
+    return;
+  }
+  section.style.display='block';
+  container.innerHTML=selected.map(t=>`
+    <div class="qty-row">
+      <span class="qty-label">${t}</span>
+      <div class="input-unit">
+        <input type="number" min="0" placeholder="0" class="edit-qty-input" value="${editJobtypeQuantities[t]}" />
+        <span class="unit">${unitFor(t)}</span>
+      </div>
+    </div>`).join('');
+  container.querySelectorAll('.edit-qty-input').forEach((inp,i)=>{
+    inp.addEventListener('input',()=>{editJobtypeQuantities[selected[i]]=inp.value;});
+  });
+}
+
+function toggleEditRecurring(){
+  editIsRecurring=!editIsRecurring;
+  document.getElementById('edit-recurring-toggle').classList.toggle('active',editIsRecurring);
+  document.getElementById('edit-recurring-switch').classList.toggle('on',editIsRecurring);
+}
+
+function updateEditPriorityDot(){
+  const val=document.getElementById('edit-priority-sel').value;
+  const dot=document.getElementById('edit-priority-dot');
+  dot.className='priority-dot'+(val==='Low'?' low':val==='Medium'?' med':val==='High'?' high':'');
+}
+
+async function saveEditedJob(){
+  if(!editingJobId)return;
+  const customer=document.getElementById('edit-customer').value.trim();
+  const address=document.getElementById('edit-address').value.trim();
+  const jobtypes=getEditSelectedJTs();
+  const members=getEditSelectedMembers();
+  const priority=document.getElementById('edit-priority-sel').value;
+  if(!customer||!address||!jobtypes.length||!members.length||!priority){
+    alert('Please fill in: job site, address, at least one job type, priority, and at least one crew member.');
+    return;
+  }
+  const quantities={};
+  jobtypes.forEach(t=>{if(editJobtypeQuantities[t])quantities[t]=editJobtypeQuantities[t];});
+
+  const saveBtn=document.querySelector('#edit-overlay .dispatch-btn');
+  const originalHtml=saveBtn.innerHTML;
+  saveBtn.disabled=true;
+  saveBtn.innerHTML='<i class="ti ti-loader-2"></i> Saving...';
+
+  try{
+    await db.collection('jobs').doc(editingJobId).update({
+      customer,
+      phone:document.getElementById('edit-phone').value.trim(),
+      email:document.getElementById('edit-email').value.trim(),
+      address,
+      jobtypes,
+      members,
+      notes:document.getElementById('edit-notes').value.trim(),
+      priority,
+      duration:document.getElementById('edit-duration').value,
+      quantities,
+      recurring:editIsRecurring
+    });
+    closeEditModal();
+    showToast('Job updated');
+  }catch(err){
+    console.error('Edit save failed:',err);
+    showToast('Could not save changes — check your connection and try again',true);
+  }finally{
+    saveBtn.disabled=false;
+    saveBtn.innerHTML=originalHtml;
+  }
+}
 
 // ---- Invoices ----
 let invoiceMaterials=[];
@@ -893,6 +1323,7 @@ function loadInvoiceFromJob(){
   document.getElementById('inv-phase').value='';
   document.getElementById('inv-landvert').value='Land';
   document.getElementById('inv-complete').value=job.status==='Done'?'Yes':'No';
+  document.getElementById('inv-amount').value='';
 
   invoiceMaterials=(job.quantities&&Object.keys(job.quantities).length)
     ? Object.entries(job.quantities).map(([t,q])=>({material:`${t} (${unitFor(t)})`,qty:q,location:''}))
@@ -952,6 +1383,7 @@ async function deliverInvoice(record, btn){
     land_or_vertical:record.landOrVertical,
     job_complete:record.jobComplete,
     materials_list:materialsToText(record.materials),
+    invoice_amount:record.amount?`$${Number(record.amount).toFixed(2)}`:'',
     machine_notes:record.machineNotes,
     labor_notes:record.laborNotes,
     other_notes:record.otherNotes,
@@ -996,6 +1428,7 @@ async function sendInvoice(){
     landOrVertical:document.getElementById('inv-landvert').value,
     jobComplete:document.getElementById('inv-complete').value,
     materials:invoiceMaterials.filter(m=>m.material),
+    amount:parseFloat(document.getElementById('inv-amount').value)||0,
     machineNotes:document.getElementById('inv-machine-notes').value,
     laborNotes:document.getElementById('inv-labor-notes').value,
     otherNotes:document.getElementById('inv-other-notes').value
@@ -1018,6 +1451,7 @@ function renderInvoiceHistory(){
           <div class="job-title">${inv.invoiceNumber||'Invoice'}</div>
           <div class="job-meta"><i class="ti ti-user" style="font-size:12px"></i> ${inv.billTo||''} &nbsp;·&nbsp; ${inv.invoiceDate||''}</div>
         </div>
+        ${inv.amount?`<div class="badge badge-done">$${Number(inv.amount).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`:''}
       </div>
       <div style="font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:4px;color:var(--color-text-secondary)">
         <i class="ti ti-map-pin" style="font-size:13px"></i> ${inv.site||''}
@@ -1052,6 +1486,7 @@ async function resendInvoice(id){
     landOrVertical:inv.landOrVertical,
     jobComplete:inv.jobComplete,
     materials:inv.materials,
+    amount:inv.amount||0,
     machineNotes:inv.machineNotes,
     laborNotes:inv.laborNotes,
     otherNotes:inv.otherNotes
@@ -1076,6 +1511,9 @@ renderCrewFilterChips();
 renderJobs();
 renderInvoiceJobPicker();
 renderInvoiceHistory();
+renderSummary();
+updateOfflineBanner();
+flushPendingOps();
 if(isBossUnlocked())switchTab('boss');
 </script>
 </body>
