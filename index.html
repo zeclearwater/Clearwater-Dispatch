@@ -272,7 +272,7 @@ textarea{resize:vertical;min-height:80px}
     <label style="margin-top:14px">Recurring job</label>
     <div class="toggle-row" id="recurring-toggle" onclick="toggleRecurring()">
       <i class="ti ti-refresh"></i>
-      <span class="toggle-label">Mark as recurring / return visit</span>
+      <span class="toggle-label">Return visit — save as a Recurring Job template once this one's marked done</span>
       <div class="toggle-switch" id="recurring-switch"></div>
     </div>
 
@@ -623,6 +623,10 @@ let photos=[],jobs=[],crewFilter='all',activeTeam='',isRecurring=false,crewSubTa
 let sentInvoices=[],invoiceSubTab='new';
 let editingJobId=null,editIsRecurring=false,editJobtypeQuantities={},editMode='job';
 let recurringJobs=[];
+// Set by loadDispatchFormFromTemplate() when the Boss dispatches "this week's"
+// visit from an existing recurring template — lets dispatchJob()/markDone()
+// know not to save yet another template for the same customer.
+let dispatchFromTemplateId=null;
 
 // Live sync: Firestore pushes updates to every connected device in real time.
 db.collection('jobs').orderBy('createdAt','desc').onSnapshot(snap=>{
@@ -911,7 +915,7 @@ async function dispatchJob(){
     alert('Please fill in: job site, address, at least one job type, priority, and at least one crew member.');return;
   }
   const teamLabel=activeTeam==='vaquero'?"Vaquero's Crew":activeTeam==='crew2'?"Otis's Crew":'Mixed';
-  const payload={customer,phone,email,address,jobtypes,members,teamLabel,notes,priority,duration,quantities,recurring:isRecurring,photosData:[...photos]};
+  const payload={customer,phone,email,address,jobtypes,members,teamLabel,notes,priority,duration,quantities,recurring:isRecurring,photosData:[...photos],sourceTemplateId:dispatchFromTemplateId};
 
   const dispatchBtn=document.querySelector('.dispatch-btn');
   const originalBtnHtml=dispatchBtn.innerHTML;
@@ -951,7 +955,7 @@ async function performDispatch(payload){
     customer:payload.customer,phone:payload.phone,email:payload.email,address:payload.address,
     jobtypes:payload.jobtypes,members:payload.members,teamLabel:payload.teamLabel,
     notes:payload.notes,priority:payload.priority,duration:payload.duration,quantities:payload.quantities,
-    recurring:payload.recurring,photos:photoUrls,status:'New',
+    recurring:payload.recurring,sourceTemplateId:payload.sourceTemplateId||null,photos:photoUrls,status:'New',
     time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
     date:new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}),
     createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -970,6 +974,7 @@ function resetForm(){
   document.getElementById('recurring-toggle').classList.remove('active');
   document.getElementById('recurring-switch').classList.remove('on');
   activeTeam='';photos=[];renderPreviews();
+  dispatchFromTemplateId=null;
 }
 
 function showToast(msg,isError){
@@ -1181,11 +1186,24 @@ async function saveUpdate(id){
 }
 
 function markDone(id){
-  // No auto-regeneration here anymore — recurring visits are dispatched
-  // explicitly from the Recurring tab's templates, so completing a job just
-  // completes it, the same as any other job. See openRecurringForm/
-  // loadDispatchFormFromTemplate for how the next visit gets created.
+  // The completed job itself just moves to History like any other job —
+  // no duplicate is ever created here. But if the Boss flagged it "Recurring"
+  // at dispatch time and it DIDN'T already come from a saved template, this
+  // is the first time we know for sure it's a repeat customer, so save it as
+  // a template now — that's the only "auto" part, and it lands in the
+  // Recurring tab, not back in Active Jobs. A job dispatched FROM an
+  // existing template (sourceTemplateId set) already has a template, so it
+  // doesn't get a second one.
+  const job=jobs.find(j=>j.id===id);
   db.collection('jobs').doc(id).update({status:'Done'}).then(()=>{
+    if(job && job.recurring && !job.sourceTemplateId){
+      return db.collection('recurringJobs').add({
+        customer:job.customer,phone:job.phone,email:job.email,address:job.address,
+        jobtypes:job.jobtypes,members:job.members,
+        notes:job.notes,priority:job.priority,duration:job.duration,quantities:job.quantities,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      }).then(()=>showToast('Job marked done — saved to Recurring Jobs so it\'s ready to dispatch next time'));
+    }
     showToast('Job marked done');
   }).catch(err=>{console.error(err);showToast('Could not update job',true);});
 }
@@ -1429,6 +1447,7 @@ function deleteRecurringJob(id){
 function loadDispatchFormFromTemplate(id){
   const tmpl=recurringJobs.find(r=>r.id===id);
   if(!tmpl)return;
+  dispatchFromTemplateId=id;
 
   switchTab('boss');
 
