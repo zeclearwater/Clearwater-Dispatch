@@ -306,11 +306,22 @@ textarea{resize:vertical;min-height:80px}
     <div class="sub-tab-bar">
       <button class="sub-tab active" onclick="switchSubTab(this,'active')"><i class="ti ti-list-check"></i> Active Jobs</button>
       <button class="sub-tab" onclick="switchSubTab(this,'history')"><i class="ti ti-archive"></i> Job History</button>
+      <button class="sub-tab" onclick="switchSubTab(this,'recurring')"><i class="ti ti-refresh"></i> Recurring</button>
     </div>
     <div class="crew-filter" id="crew-filter">
       <div class="filter-chip active" onclick="filterCrew(this,'all')">All</div>
     </div>
     <div id="job-list"></div>
+
+    <div id="recurring-tab" style="display:none">
+      <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:14px">
+        Recurring customers, saved once so the Boss doesn't have to retype the name, address, and phone number every visit. Marking a visit done never adds a duplicate here — this list only holds the templates.
+      </p>
+      <button class="dispatch-btn" id="add-recurring-btn" onclick="openRecurringForm(null)" style="display:none;margin-bottom:16px">
+        <i class="ti ti-plus"></i> Add Recurring Job
+      </button>
+      <div id="recurring-list"></div>
+    </div>
   </div>
 
   <!-- INVOICES PANEL -->
@@ -432,7 +443,7 @@ textarea{resize:vertical;min-height:80px}
 <div class="edit-overlay" id="edit-overlay">
   <div class="edit-box">
     <div class="edit-box-header">
-      <h2><i class="ti ti-edit"></i> Edit Job</h2>
+      <h2 id="edit-modal-title"><i class="ti ti-edit"></i> Edit Job</h2>
       <button class="edit-close-btn" onclick="closeEditModal()"><i class="ti ti-x"></i></button>
     </div>
 
@@ -488,11 +499,13 @@ textarea{resize:vertical;min-height:80px}
       </div>
     </div>
 
-    <label style="margin-top:14px">Recurring job</label>
-    <div class="toggle-row" id="edit-recurring-toggle" onclick="toggleEditRecurring()">
-      <i class="ti ti-refresh"></i>
-      <span class="toggle-label">Mark as recurring / return visit</span>
-      <div class="toggle-switch" id="edit-recurring-switch"></div>
+    <div id="edit-recurring-row">
+      <label style="margin-top:14px">Recurring job</label>
+      <div class="toggle-row" id="edit-recurring-toggle" onclick="toggleEditRecurring()">
+        <i class="ti ti-refresh"></i>
+        <span class="toggle-label">Mark as recurring / return visit</span>
+        <div class="toggle-switch" id="edit-recurring-switch"></div>
+      </div>
     </div>
 
     <label>Assign crew</label>
@@ -501,7 +514,7 @@ textarea{resize:vertical;min-height:80px}
     <label>Job notes</label>
     <textarea id="edit-notes"></textarea>
 
-    <button class="dispatch-btn" onclick="saveEditedJob()" style="margin-top:18px">
+    <button class="dispatch-btn" id="edit-save-btn" onclick="saveEditedJob()" style="margin-top:18px">
       <i class="ti ti-device-floppy"></i> Save changes
     </button>
   </div>
@@ -608,7 +621,8 @@ function unitOf(jobType,entry){return (entry && typeof entry==='object' && entry
 
 let photos=[],jobs=[],crewFilter='all',activeTeam='',isRecurring=false,crewSubTab='active',jobtypeQuantities={},pendingUpdates={};
 let sentInvoices=[],invoiceSubTab='new';
-let editingJobId=null,editIsRecurring=false,editJobtypeQuantities={};
+let editingJobId=null,editIsRecurring=false,editJobtypeQuantities={},editMode='job';
+let recurringJobs=[];
 
 // Live sync: Firestore pushes updates to every connected device in real time.
 db.collection('jobs').orderBy('createdAt','desc').onSnapshot(snap=>{
@@ -628,6 +642,15 @@ db.collection('invoices').orderBy('sentAt','desc').onSnapshot(snap=>{
   renderSummary();
 }, err=>{
   console.error('Invoice history sync error:', err);
+});
+
+// Recurring job templates — separate from live jobs entirely, so a completed
+// visit never lingers in (or duplicates back into) the active job list.
+db.collection('recurringJobs').orderBy('createdAt','desc').onSnapshot(snap=>{
+  recurringJobs = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderRecurringList();
+}, err=>{
+  console.error('Recurring jobs sync error:', err);
 });
 
 // ---- Offline photo-upload queue ----
@@ -751,7 +774,16 @@ function checkBossPassword(){
 
 function switchSubTab(btn,tab){
   document.querySelectorAll('#panel-crew .sub-tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');crewSubTab=tab;renderJobs();
+  btn.classList.add('active');crewSubTab=tab;
+
+  const isRecurringTab=tab==='recurring';
+  document.getElementById('job-list').style.display=isRecurringTab?'none':'block';
+  document.getElementById('crew-filter').style.display=isRecurringTab?'none':'flex';
+  document.getElementById('recurring-tab').style.display=isRecurringTab?'block':'none';
+  document.getElementById('add-recurring-btn').style.display=(isRecurringTab&&isBossUnlocked())?'flex':'none';
+
+  if(isRecurringTab)renderRecurringList();
+  else renderJobs();
 }
 
 function switchInvoiceSubTab(btn,tab){
@@ -1149,21 +1181,11 @@ async function saveUpdate(id){
 }
 
 function markDone(id){
-  // Grab the job's details before the status update, in case it's recurring
-  // and needs the next occurrence auto-created right after.
-  const job=jobs.find(j=>j.id===id);
+  // No auto-regeneration here anymore — recurring visits are dispatched
+  // explicitly from the Recurring tab's templates, so completing a job just
+  // completes it, the same as any other job. See openRecurringForm/
+  // loadDispatchFormFromTemplate for how the next visit gets created.
   db.collection('jobs').doc(id).update({status:'Done'}).then(()=>{
-    if(job && job.recurring){
-      return db.collection('jobs').add({
-        customer:job.customer,phone:job.phone,email:job.email,address:job.address,
-        jobtypes:job.jobtypes,members:job.members,teamLabel:job.teamLabel,
-        notes:job.notes,priority:job.priority,duration:job.duration,quantities:job.quantities,
-        recurring:true,photos:[],crewNotes:[],status:'New',
-        time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
-        date:new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}),
-        createdAt:firebase.firestore.FieldValue.serverTimestamp()
-      }).then(()=>showToast('Job completed — next recurring visit auto-scheduled'));
-    }
     showToast('Job marked done');
   }).catch(err=>{console.error(err);showToast('Could not update job',true);});
 }
@@ -1185,38 +1207,65 @@ function closeLightbox(){document.getElementById('lightbox').classList.remove('o
 function openEditJob(id){
   const job=jobs.find(j=>j.id===id);
   if(!job)return;
+  editMode='job';
   editingJobId=id;
+  document.getElementById('edit-modal-title').innerHTML='<i class="ti ti-edit"></i> Edit Job';
+  document.getElementById('edit-save-btn').innerHTML='<i class="ti ti-device-floppy"></i> Save changes';
+  document.getElementById('edit-recurring-row').style.display='';
+  populateEditForm(job);
+  document.getElementById('edit-overlay').classList.add('open');
+}
 
-  document.getElementById('edit-customer').value=job.customer||'';
-  document.getElementById('edit-phone').value=job.phone||'';
-  document.getElementById('edit-email').value=job.email||'';
-  document.getElementById('edit-address').value=job.address||'';
-  document.getElementById('edit-notes').value=job.notes||'';
-  document.getElementById('edit-duration').value=job.duration||'';
-  document.getElementById('edit-priority-sel').value=job.priority||'';
+// Recurring job templates use the exact same modal/fields as editing a job —
+// pass id=null to create a new template, or an existing template's id to edit it.
+function openRecurringForm(id){
+  const tmpl=id?recurringJobs.find(r=>r.id===id):null;
+  if(id && !tmpl)return;
+  editMode='recurring';
+  editingJobId=id;
+  document.getElementById('edit-modal-title').innerHTML=id
+    ? '<i class="ti ti-refresh"></i> Edit Recurring Job'
+    : '<i class="ti ti-refresh"></i> New Recurring Job';
+  document.getElementById('edit-save-btn').innerHTML='<i class="ti ti-device-floppy"></i> Save recurring job';
+  // A template lives in the Recurring list by definition, so the toggle here
+  // (which only matters for the "Recurring" badge on a live job) is redundant.
+  document.getElementById('edit-recurring-row').style.display='none';
+  populateEditForm(tmpl||{});
+  document.getElementById('edit-overlay').classList.add('open');
+}
+
+function populateEditForm(data){
+  document.getElementById('edit-customer').value=data.customer||'';
+  document.getElementById('edit-phone').value=data.phone||'';
+  document.getElementById('edit-email').value=data.email||'';
+  document.getElementById('edit-address').value=data.address||'';
+  document.getElementById('edit-notes').value=data.notes||'';
+  document.getElementById('edit-duration').value=data.duration||'';
+  document.getElementById('edit-priority-sel').value=data.priority||'';
   updateEditPriorityDot();
 
-  editIsRecurring=!!job.recurring;
+  editIsRecurring=!!data.recurring;
   document.getElementById('edit-recurring-toggle').classList.toggle('active',editIsRecurring);
   document.getElementById('edit-recurring-switch').classList.toggle('on',editIsRecurring);
 
   document.getElementById('edit-jt-grid').innerHTML=Object.keys(JOB_TYPE_UNITS).map(t=>
-    `<button type="button" class="jt-btn${(job.jobtypes||[]).includes(t)?' selected':''}" onclick="toggleEditJT(this)">${t}</button>`).join('');
-  editJobtypeQuantities={...(job.quantities||{})};
+    `<button type="button" class="jt-btn${(data.jobtypes||[]).includes(t)?' selected':''}" onclick="toggleEditJT(this)">${t}</button>`).join('');
+  editJobtypeQuantities={...(data.quantities||{})};
   renderEditQtyInputs();
 
   const allMembers=[...CREWS.vaquero,...CREWS.crew2,...CREWS.solo];
   document.getElementById('edit-member-grid').innerHTML=allMembers.map(m=>
-    `<button type="button" class="m-btn${(job.members||[]).includes(m.name)?' selected':''}" onclick="toggleMember(this)">
+    `<button type="button" class="m-btn${(data.members||[]).includes(m.name)?' selected':''}" onclick="toggleMember(this)">
       ${m.name}${m.role?`<span class="role"><i class="ti ti-star-filled"></i></span>`:''}
     </button>`).join('');
-
-  document.getElementById('edit-overlay').classList.add('open');
 }
 
 function closeEditModal(){
   document.getElementById('edit-overlay').classList.remove('open');
+  const wasRecurring=editMode==='recurring';
   editingJobId=null;
+  editMode='job';
+  if(wasRecurring)renderRecurringList();
 }
 
 function toggleEditJT(btn){btn.classList.toggle('selected');renderEditQtyInputs();}
@@ -1276,7 +1325,7 @@ function updateEditPriorityDot(){
 }
 
 async function saveEditedJob(){
-  if(!editingJobId)return;
+  if(editMode==='job' && !editingJobId)return;
   const customer=document.getElementById('edit-customer').value.trim();
   const address=document.getElementById('edit-address').value.trim();
   const jobtypes=getEditSelectedJTs();
@@ -1292,34 +1341,126 @@ async function saveEditedJob(){
     if(entry && qtyOf(entry))quantities[t]={qty:qtyOf(entry),unit:unitOf(t,entry)};
   });
 
-  const saveBtn=document.querySelector('#edit-overlay .dispatch-btn');
+  const commonFields={
+    customer,
+    phone:document.getElementById('edit-phone').value.trim(),
+    email:document.getElementById('edit-email').value.trim(),
+    address,
+    jobtypes,
+    members,
+    notes:document.getElementById('edit-notes').value.trim(),
+    priority,
+    duration:document.getElementById('edit-duration').value,
+    quantities
+  };
+
+  const saveBtn=document.getElementById('edit-save-btn');
   const originalHtml=saveBtn.innerHTML;
   saveBtn.disabled=true;
   saveBtn.innerHTML='<i class="ti ti-loader-2"></i> Saving...';
 
   try{
-    await db.collection('jobs').doc(editingJobId).update({
-      customer,
-      phone:document.getElementById('edit-phone').value.trim(),
-      email:document.getElementById('edit-email').value.trim(),
-      address,
-      jobtypes,
-      members,
-      notes:document.getElementById('edit-notes').value.trim(),
-      priority,
-      duration:document.getElementById('edit-duration').value,
-      quantities,
-      recurring:editIsRecurring
-    });
-    closeEditModal();
-    showToast('Job updated');
+    if(editMode==='job'){
+      await db.collection('jobs').doc(editingJobId).update({...commonFields,recurring:editIsRecurring});
+      closeEditModal();
+      showToast('Job updated');
+    }else{
+      if(editingJobId){
+        await db.collection('recurringJobs').doc(editingJobId).update(commonFields);
+      }else{
+        await db.collection('recurringJobs').add({...commonFields,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      }
+      closeEditModal();
+      showToast('Recurring job saved');
+    }
   }catch(err){
-    console.error('Edit save failed:',err);
-    showToast('Could not save changes — check your connection and try again',true);
+    console.error('Save failed:',err);
+    showToast('Could not save — check your connection and try again',true);
   }finally{
     saveBtn.disabled=false;
     saveBtn.innerHTML=originalHtml;
   }
+}
+
+// ---- Recurring job templates ----
+function renderRecurringList(){
+  const list=document.getElementById('recurring-list');
+  if(!list)return;
+  const bossActions=isBossUnlocked();
+  const addBtn=document.getElementById('add-recurring-btn');
+  if(addBtn)addBtn.style.display=(bossActions && document.getElementById('recurring-tab').style.display!=='none')?'flex':'none';
+
+  if(!recurringJobs.length){
+    list.innerHTML=`<div class="empty"><i class="ti ti-refresh"></i>No recurring jobs yet.<br>${bossActions?'Add one to skip retyping customer details each visit.':'Ask the Boss to add one here.'}</div>`;
+    return;
+  }
+  list.innerHTML=recurringJobs.map(r=>`
+    <div class="job-card">
+      <div class="job-card-header">
+        <div>
+          <div class="job-title">${r.customer}</div>
+          ${r.members&&r.members.length?`<div class="job-meta"><i class="ti ti-users" style="font-size:12px"></i> ${r.members.join(', ')}</div>`:''}
+        </div>
+      </div>
+      ${r.jobtypes&&r.jobtypes.length?`<div style="margin-bottom:6px">${r.jobtypes.map(t=>`<span class="jt-tag">${t}</span>`).join('')}</div>`:''}
+      ${r.address?`<div style="font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:4px;color:var(--color-text-secondary)"><i class="ti ti-map-pin" style="font-size:13px"></i> ${r.address}</div>`:''}
+      ${r.phone?`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px"><i class="ti ti-phone" style="font-size:13px"></i> ${r.phone}</div>`:''}
+      ${r.notes?`<div class="job-notes">"${r.notes}"</div>`:''}
+      ${bossActions?`
+      <div class="status-row">
+        <button class="status-btn" onclick="loadDispatchFormFromTemplate('${r.id}')"><i class="ti ti-send"></i> Dispatch this week</button>
+        <button class="status-btn" onclick="openRecurringForm('${r.id}')"><i class="ti ti-edit"></i> Edit</button>
+        <button class="status-btn" onclick="deleteRecurringJob('${r.id}')" style="margin-left:auto"><i class="ti ti-trash"></i></button>
+      </div>`:''}
+    </div>`).join('');
+}
+
+function deleteRecurringJob(id){
+  if(confirm('Delete this recurring job template? This cannot be undone.')){
+    db.collection('recurringJobs').doc(id).delete().then(()=>{
+      showToast('Recurring job deleted');
+    }).catch(err=>{console.error(err);showToast('Could not delete recurring job',true);});
+  }
+}
+
+// Loads a recurring template into the regular Dispatch form (Boss tab) so
+// the Boss can review/tweak it for this specific week before hitting Send —
+// nothing is dispatched until they actually click Send.
+function loadDispatchFormFromTemplate(id){
+  const tmpl=recurringJobs.find(r=>r.id===id);
+  if(!tmpl)return;
+
+  switchTab('boss');
+
+  document.getElementById('customer').value=tmpl.customer||'';
+  document.getElementById('phone').value=tmpl.phone||'';
+  document.getElementById('email').value=tmpl.email||'';
+  document.getElementById('address').value=tmpl.address||'';
+  document.getElementById('notes').value=tmpl.notes||'';
+  document.getElementById('duration').value=tmpl.duration||'';
+  document.getElementById('priority-sel').value=tmpl.priority||'';
+  updatePriorityDot();
+
+  document.getElementById('job-type-grid').innerHTML=Object.keys(JOB_TYPE_UNITS).map(t=>
+    `<button class="jt-btn${(tmpl.jobtypes||[]).includes(t)?' selected':''}" onclick="toggleJT(this)">${t}</button>`).join('');
+  jobtypeQuantities={...(tmpl.quantities||{})};
+  renderQtyInputs();
+
+  const allMembers=[...CREWS.vaquero,...CREWS.crew2,...CREWS.solo];
+  document.getElementById('member-grid').innerHTML=allMembers.map(m=>
+    `<button class="m-btn${(tmpl.members||[]).includes(m.name)?' selected':''}" onclick="toggleMember(this)">
+      ${m.name}${m.role?`<span class="role"><i class="ti ti-star-filled"></i></span>`:''}
+    </button>`).join('');
+  activeTeam='';
+  document.querySelectorAll('.ct-btn').forEach(b=>b.className='ct-btn');
+
+  isRecurring=true;
+  document.getElementById('recurring-toggle').classList.add('active');
+  document.getElementById('recurring-switch').classList.add('on');
+
+  photos=[];renderPreviews();
+
+  showToast(`Loaded ${tmpl.customer} — review and hit Send to dispatch this week's visit`);
 }
 
 // ---- Invoices ----
