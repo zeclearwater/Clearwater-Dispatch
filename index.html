@@ -183,9 +183,17 @@ textarea{resize:vertical;min-height:80px}
 .perf-crew-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px 10px}
 .perf-crew-card.vaquero{background:#F0FBF7;border-color:#B9E6D6}
 .perf-crew-card.crew2{background:#EFF6FE;border-color:#B9D6F2}
-.perf-crew-header{font-size:12px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.perf-crew-header{font-size:12px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+.perf-crew-header .chevron{margin-left:auto;font-size:14px;transition:transform .2s}
+.perf-crew-header.open .chevron{transform:rotate(180deg)}
 .perf-crew-card.vaquero .perf-crew-header{color:#0F6E56}
 .perf-crew-card.crew2 .perf-crew-header{color:#185FA5}
+.perf-jt-breakdown{display:none;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary)}
+.perf-jt-breakdown.open{display:block}
+.perf-jt-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:var(--color-text-secondary)}
+.perf-jt-row .jt-name{color:var(--color-text-primary)}
+.perf-jt-row .jt-amount{font-weight:600;color:var(--brand-primary-dark)}
+.perf-jt-empty{font-size:12px;color:var(--color-text-secondary);text-align:center;padding:6px 0}
 .perf-crew-grid .summary-grid{gap:6px}
 .perf-crew-card .summary-value{font-size:16px}
 .perf-crew-card .summary-label{font-size:10px}
@@ -335,7 +343,7 @@ textarea{resize:vertical;min-height:80px}
 
       <div class="perf-crew-grid">
         <div class="perf-crew-card vaquero">
-          <div class="perf-crew-header"><i class="ti ti-users"></i> Vaquero's Crew</div>
+          <div class="perf-crew-header" onclick="toggleCrewBreakdown(this,'v')"><i class="ti ti-users"></i> Vaquero's Crew <i class="ti ti-chevron-down chevron"></i></div>
           <div class="summary-grid">
             <div class="summary-tile">
               <div class="summary-value" id="perf-v-footage">0</div>
@@ -354,9 +362,10 @@ textarea{resize:vertical;min-height:80px}
               <div class="summary-label">Invoiced</div>
             </div>
           </div>
+          <div class="perf-jt-breakdown" id="perf-v-breakdown"></div>
         </div>
         <div class="perf-crew-card crew2">
-          <div class="perf-crew-header"><i class="ti ti-users"></i> Otis's Crew</div>
+          <div class="perf-crew-header" onclick="toggleCrewBreakdown(this,'c')"><i class="ti ti-users"></i> Otis's Crew <i class="ti ti-chevron-down chevron"></i></div>
           <div class="summary-grid">
             <div class="summary-tile">
               <div class="summary-value" id="perf-c-footage">0</div>
@@ -375,6 +384,7 @@ textarea{resize:vertical;min-height:80px}
               <div class="summary-label">Invoiced</div>
             </div>
           </div>
+          <div class="perf-jt-breakdown" id="perf-c-breakdown"></div>
         </div>
       </div>
       <div class="perf-note">Jobs dispatched to "All / Mixed" count toward the combined total above but aren't split between the two crews.</div>
@@ -1118,8 +1128,8 @@ function renderPerformance(){
   const rangeStart=new Date(Date.now()-perfRangeDays*24*60*60*1000);
   let footage=0, qtyInstalled=0, jobsCompleted=0, revenue=0;
   const byTeam={
-    "Vaquero's Crew":{footage:0,qty:0,jobsCompleted:0,revenue:0},
-    "Otis's Crew":{footage:0,qty:0,jobsCompleted:0,revenue:0}
+    "Vaquero's Crew":{footage:0,qty:0,jobsCompleted:0,revenue:0,byType:{}},
+    "Otis's Crew":{footage:0,qty:0,jobsCompleted:0,revenue:0,byType:{}}
   };
   // jobId -> teamLabel, so sent invoices (which only store jobId) can be
   // attributed back to the crew that did the work.
@@ -1148,6 +1158,15 @@ function renderPerformance(){
       bucket.footage+=jobFootage;
       bucket.qty+=jobQty;
       if(j.status==='Done')bucket.jobsCompleted++;
+      if(j.quantities){
+        Object.entries(j.quantities).forEach(([t,q])=>{
+          const amt=parseFloat(qtyOf(q))||0;
+          if(!amt)return;
+          const unit=unitOf(t,q);
+          if(!bucket.byType[t])bucket.byType[t]={amount:0,unit};
+          bucket.byType[t].amount+=amt;
+        });
+      }
     }
   });
 
@@ -1178,6 +1197,31 @@ function renderPerformance(){
   document.getElementById('perf-c-qty').textContent=c.qty.toLocaleString();
   document.getElementById('perf-c-jobs').textContent=c.jobsCompleted;
   document.getElementById('perf-c-revenue').textContent='$'+c.revenue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  renderJTBreakdown('perf-v-breakdown', v.byType);
+  renderJTBreakdown('perf-c-breakdown', c.byType);
+}
+
+function renderJTBreakdown(containerId, byType){
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  const entries=Object.entries(byType);
+  if(!entries.length){
+    el.innerHTML='<div class="perf-jt-empty">No job types recorded for this period.</div>';
+    return;
+  }
+  el.innerHTML=entries
+    .sort((a,b)=>b[1].amount-a[1].amount)
+    .map(([type,data])=>`
+      <div class="perf-jt-row">
+        <span class="jt-name">${type}</span>
+        <span class="jt-amount">${data.amount.toLocaleString()} ${data.unit}</span>
+      </div>`).join('');
+}
+
+function toggleCrewBreakdown(headerEl, key){
+  headerEl.classList.toggle('open');
+  document.getElementById(`perf-${key}-breakdown`).classList.toggle('open');
 }
 
 function renderJobs(){
