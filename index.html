@@ -3,11 +3,22 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Erosion Control Dispatch</title>
+<title>Clearwater Dispatch</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0E7490" />
+<link rel="apple-touch-icon" href="icon-192.png" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.6.0/dist/tabler-icons.min.css" />
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
+  /* Brand colors — the only colors that should need changing for a new company's theme. */
+  --brand-primary: #0E7490;
+  --brand-primary-dark: #155E75;
+  --brand-accent: #22B8CF;
+  --brand-accent-light: #E0F7FA;
+  --brand-disabled: #8FC4CE;
+  --brand-gold: #D4AF37;
+
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --color-text-primary: #1a1a1a;
   --color-text-secondary: #6b7280;
@@ -21,25 +32,35 @@
 }
 body{font-family:var(--font-sans);font-size:15px;color:var(--color-text-primary);background:#f3f4f6;min-height:100vh}
 .app-wrap{max-width:540px;margin:0 auto;background:#fff;min-height:100vh;box-shadow:0 0 24px rgba(0,0,0,.08)}
-.app-header{background:#534AB7;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:10px}
+.app-header{background:var(--brand-primary);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:10px}
 .app-header h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
 .app-header i{font-size:22px}
+.app-header img.logo-mark{height:28px;width:auto;display:block}
 .tab-bar{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);background:#fff}
 .tab{flex:1;padding:11px 0;font-size:14px;font-weight:500;color:var(--color-text-secondary);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-align:center}
-.tab.active{color:#534AB7;border-bottom:2px solid #7F77DD}
+.tab.active{color:var(--brand-primary);border-bottom:2px solid var(--brand-accent)}
 .panel{display:none;padding:1.25rem}
 .panel.active{display:block}
 label{font-size:13px;color:var(--color-text-secondary);display:block;margin-bottom:4px;margin-top:14px}
 label:first-child{margin-top:0}
 input,select,textarea{width:100%;font-size:14px;font-family:var(--font-sans);padding:9px 11px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:#fff;color:var(--color-text-primary);outline:none;transition:border .15s}
-input:focus,select:focus,textarea:focus{border-color:#7F77DD}
+input:focus,select:focus,textarea:focus{border-color:var(--brand-accent)}
 textarea{resize:vertical;min-height:80px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.qty-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.qty-row:first-child{margin-top:6px}
+.qty-row .qty-label{font-size:13px;color:var(--color-text-primary);flex:1;min-width:0}
+.qty-row .qty-input{width:64px;flex-shrink:0;padding:9px 8px;text-align:center}
+.unit-toggle{display:flex;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden;flex-shrink:0}
+.unit-btn{font-size:12px;padding:8px 10px;border:none;background:#fff;color:var(--color-text-secondary);cursor:pointer;font-family:var(--font-sans);transition:all .15s}
+.unit-btn:hover{background:var(--color-background-secondary)}
+.unit-btn.selected{background:var(--brand-accent-light);color:var(--brand-primary-dark);font-weight:600}
+.unit-btn+.unit-btn{border-left:0.5px solid var(--color-border-secondary)}
 .job-type-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
 .jt-btn{font-size:13px;padding:7px 13px;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:#fff;color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s;user-select:none}
 .jt-btn:hover{background:var(--color-background-secondary)}
-.jt-btn.selected{background:#EEEDFE;color:#3C3489;border-color:#7F77DD;font-weight:500}
+.jt-btn.selected{background:var(--brand-accent-light);color:var(--brand-primary-dark);border-color:var(--brand-accent);font-weight:500}
 .crew-team-row{display:flex;gap:8px;margin-top:4px}
 .ct-btn{flex:1;padding:9px 0;font-size:13px;font-weight:500;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:#fff;color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s}
 .ct-btn:hover{background:var(--color-background-secondary)}
@@ -49,9 +70,9 @@ textarea{resize:vertical;min-height:80px}
 .member-grid{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;min-height:32px}
 .m-btn{font-size:13px;padding:6px 12px;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:#fff;color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s;display:flex;align-items:center;gap:5px}
 .m-btn:hover{background:var(--color-background-secondary)}
-.m-btn.selected{background:#EEEDFE;color:#3C3489;border-color:#7F77DD}
-.m-btn .role{font-size:10px;padding:1px 5px;border-radius:4px;background:#C0DD97;color:#27500A;font-weight:500}
-.m-btn.selected .role{background:#AFA9EC;color:#26215C}
+.m-btn.selected{background:var(--brand-accent-light);color:var(--brand-primary-dark);border-color:var(--brand-accent)}
+.m-btn .role{font-size:10px;padding:1px 5px;border-radius:4px;background:var(--brand-accent-light);color:var(--brand-primary-dark);display:inline-flex;align-items:center}
+.m-btn .role i{font-size:11px;color:var(--brand-gold)}
 .toggle-row{display:flex;align-items:center;gap:10px;margin-top:10px;padding:11px 13px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);cursor:pointer;user-select:none}
 .toggle-row.active{background:#FAECE7;border-color:#D85A30}
 .toggle-row i{font-size:18px;color:var(--color-text-secondary)}
@@ -64,7 +85,7 @@ textarea{resize:vertical;min-height:80px}
 .toggle-switch.on::after{transform:translateX(16px)}
 .photo-upload{border:0.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-md);padding:1.5rem;text-align:center;cursor:pointer;color:var(--color-text-secondary);font-size:13px;background:var(--color-background-secondary);transition:background .15s}
 .photo-upload:hover{background:var(--color-background-tertiary)}
-.photo-upload i{font-size:30px;display:block;margin-bottom:6px;color:#7F77DD}
+.photo-upload i{font-size:30px;display:block;margin-bottom:6px;color:var(--brand-accent)}
 #photo-input{display:none}
 .photo-previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .photo-thumb{position:relative;width:76px;height:76px;border-radius:var(--border-radius-md);overflow:hidden;border:0.5px solid var(--color-border-tertiary)}
@@ -72,30 +93,31 @@ textarea{resize:vertical;min-height:80px}
 .photo-thumb .rm{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;padding:0}
 .priority-wrap{position:relative}
 .priority-wrap select{padding-left:28px}
-.priority-dot{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:11px;height:11px;border-radius:50%;background:#d1d5db;pointer-events:none;transition:background .15s}
+.priority-dot{position:absolute;left:9px;top:50%;transform:translateY(-50%);width:11px;height:11px;border-radius:50%;background:#d1d5db;pointer-events:none;transition:background .15s,opacity .15s;opacity:0}
+.priority-dot.low,.priority-dot.med,.priority-dot.high{opacity:1}
 .priority-dot.low{background:#3DB85C}
 .priority-dot.med{background:#F5C518}
 .priority-dot.high{background:#E63B3B}
-.input-unit{position:relative}
-.input-unit input{padding-right:40px}
-.input-unit .unit{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--color-text-secondary);pointer-events:none}
-.dispatch-btn{width:100%;margin-top:18px;padding:13px;background:#534AB7;color:#fff;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font-sans);display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
-.dispatch-btn:hover{background:#3C3489}
+.dispatch-btn{width:100%;margin-top:18px;padding:13px;background:var(--brand-primary);color:#fff;border:none;border-radius:var(--border-radius-md);font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font-sans);display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
+.dispatch-btn:hover{background:var(--brand-primary-dark)}
+.dispatch-btn:disabled{background:var(--brand-disabled);cursor:not-allowed}
+.dispatch-btn-logo{height:20px;width:auto;display:block}
 .toast{display:none;background:#EAF3DE;color:#27500A;border:0.5px solid #639922;border-radius:var(--border-radius-md);padding:11px 14px;font-size:13px;margin-bottom:14px;align-items:center;gap:8px}
 .toast.show{display:flex}
+.toast.error{background:#FBE7E5;color:#8A2A1D;border-color:#D85A30}
 .sub-tab-bar{display:flex;gap:0;margin-bottom:14px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden}
 .sub-tab{flex:1;padding:8px 0;font-size:13px;font-weight:500;text-align:center;cursor:pointer;color:var(--color-text-secondary);background:#fff;transition:all .15s;border:none;font-family:var(--font-sans)}
-.sub-tab.active{background:#EEEDFE;color:#3C3489}
+.sub-tab.active{background:var(--brand-accent-light);color:var(--brand-primary-dark)}
 .crew-filter{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
 .filter-chip{font-size:12px;padding:4px 12px;border-radius:20px;cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:#fff;color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s}
-.filter-chip.active{background:#EEEDFE;color:#534AB7;border-color:#7F77DD}
+.filter-chip.active{background:var(--brand-accent-light);color:var(--brand-primary);border-color:var(--brand-accent)}
 .job-card{background:#fff;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 .job-card.archived{opacity:.72}
 .job-card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
 .job-title{font-size:15px;font-weight:600}
 .job-meta{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
 .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--border-radius-md);font-weight:500}
-.badge-new{background:#EEEDFE;color:#3C3489}
+.badge-new{background:var(--brand-accent-light);color:var(--brand-primary-dark)}
 .badge-done{background:#EAF3DE;color:#27500A}
 .badge-recurring{background:#FAECE7;color:#993C1D}
 .pri-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:2px 8px;border-radius:var(--border-radius-md);font-weight:500;background:var(--color-background-secondary);color:var(--color-text-secondary)}
@@ -103,7 +125,7 @@ textarea{resize:vertical;min-height:80px}
 .pri-badge.low .dot{background:#3DB85C}
 .pri-badge.med .dot{background:#F5C518}
 .pri-badge.high .dot{background:#E63B3B}
-.jt-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--border-radius-md);background:#EEEDFE;color:#3C3489;margin:2px 2px 2px 0}
+.jt-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--border-radius-md);background:var(--brand-accent-light);color:var(--brand-primary-dark);margin:2px 2px 2px 0}
 .member-tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:var(--border-radius-md);background:#E1F5EE;color:#0F6E56;margin:2px 2px 2px 0}
 .job-notes{font-size:13px;color:var(--color-text-secondary);margin:6px 0 8px;font-style:italic}
 .job-detail-row{font-size:12px;color:var(--color-text-secondary);display:flex;gap:14px;flex-wrap:wrap;margin:4px 0 6px}
@@ -112,58 +134,119 @@ textarea{resize:vertical;min-height:80px}
 .job-thumb{width:56px;height:56px;border-radius:6px;object-fit:cover;border:0.5px solid var(--color-border-tertiary);cursor:pointer}
 .job-thumb:hover{opacity:.85}
 .status-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.update-panel{margin-top:10px;padding:12px;border:0.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary)}
+.update-panel .update-note{min-height:60px;font-size:13px}
+.update-panel .photo-upload{padding:1rem;margin-top:8px}
 .status-btn{font-size:12px;padding:6px 13px;border-radius:var(--border-radius-md);cursor:pointer;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary);color:var(--color-text-secondary);font-family:var(--font-sans);transition:all .15s;display:flex;align-items:center;gap:5px}
 .status-btn:hover{background:var(--color-background-tertiary)}
 .empty{text-align:center;padding:3rem 1rem;color:var(--color-text-secondary);font-size:14px}
 .empty i{font-size:40px;display:block;margin-bottom:10px;color:#d1d5db}
+.inv-mat-row{display:flex;gap:6px;margin-top:6px;align-items:center}
+.inv-mat-row input{font-size:13px;padding:8px 9px}
+.inv-mat-row .inv-mat-name{flex:2.4;min-width:0}
+.inv-mat-row .inv-mat-qty{flex:0.7;min-width:0}
+.inv-mat-row .inv-mat-loc{flex:1.6;min-width:0}
+.inv-rm-btn{background:var(--color-background-tertiary);border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--color-text-secondary);font-size:12px;flex-shrink:0;padding:0}
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:99}
 .lightbox.open{display:flex}
 .lightbox img{max-width:92%;max-height:88%;border-radius:var(--border-radius-md)}
 .lightbox-close{position:absolute;top:18px;right:18px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;width:38px;height:38px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.password-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.password-overlay.open{display:flex}
+.password-box{background:#fff;border-radius:var(--border-radius-lg);padding:28px 24px;max-width:320px;width:100%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.password-box i{font-size:32px;color:var(--brand-primary);display:block;margin-bottom:8px}
+.password-box h2{font-size:17px;font-weight:600;margin-bottom:6px}
+.password-box p{font-size:13px;color:var(--color-text-secondary);margin-bottom:16px}
+.password-box input{text-align:center;margin-bottom:6px}
+.password-error{font-size:12px;color:#D85A30;margin-bottom:10px;display:none}
+.offline-banner{background:#FBE7E5;color:#8A2A1D;font-size:12px;text-align:center;padding:7px 14px;display:none;align-items:center;justify-content:center;gap:6px;line-height:1.3}
+.offline-banner.show{display:flex}
+.summary-box{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:14px 16px;margin-bottom:18px}
+.summary-header{font-size:13px;font-weight:600;color:var(--color-text-secondary);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.summary-tile{text-align:center}
+.summary-value{font-size:20px;font-weight:700;color:var(--brand-primary-dark)}
+.summary-label{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.edit-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-start;justify-content:center;z-index:100;padding:20px;overflow-y:auto}
+.edit-overlay.open{display:flex}
+.edit-box{background:#fff;border-radius:var(--border-radius-lg);padding:20px;max-width:460px;width:100%;margin:20px 0;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.edit-box-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.edit-box-header h2{font-size:16px;font-weight:600;display:flex;align-items:center;gap:6px}
+.edit-close-btn{background:transparent;border:none;color:var(--color-text-secondary);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%}
+.edit-close-btn:hover{background:var(--color-background-secondary)}
+.perf-range-toggle{display:flex;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);overflow:hidden}
+.perf-range-btn{flex:1;font-size:12px;padding:7px 0;border:none;background:#fff;color:var(--color-text-secondary);cursor:pointer;font-family:var(--font-sans);font-weight:500;transition:all .15s}
+.perf-range-btn:hover{background:var(--color-background-secondary)}
+.perf-range-btn.selected{background:var(--brand-primary);color:#fff}
+.perf-range-btn+.perf-range-btn{border-left:0.5px solid var(--color-border-secondary)}
+.perf-crew-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.perf-crew-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:12px 10px}
+.perf-crew-card.vaquero{background:#F0FBF7;border-color:#B9E6D6}
+.perf-crew-card.crew2{background:#EFF6FE;border-color:#B9D6F2}
+.perf-crew-header{font-size:12px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.perf-crew-card.vaquero .perf-crew-header{color:#0F6E56}
+.perf-crew-card.crew2 .perf-crew-header{color:#185FA5}
+.perf-crew-grid .summary-grid{gap:6px}
+.perf-crew-card .summary-value{font-size:16px}
+.perf-crew-card .summary-label{font-size:10px}
+.perf-note{font-size:11px;color:var(--color-text-secondary);margin-top:-6px;margin-bottom:16px;line-height:1.4}
 </style>
 </head>
 <body>
 <div class="app-wrap">
+  <div class="offline-banner" id="offline-banner">
+    <i class="ti ti-wifi-off"></i> <span id="offline-banner-text"></span>
+  </div>
   <div class="app-header">
-    <i class="ti ti-tractor"></i>
-    <h1>Erosion Control Dispatch</h1>
+    <img class="logo-mark" id="app-logo" src="" alt="" />
+    <h1>Clearwater Dispatch</h1>
   </div>
 
   <div class="tab-bar">
-    <div class="tab active" onclick="switchTab('boss')"><i class="ti ti-clipboard-list"></i> Boss — Dispatch</div>
-    <div class="tab" onclick="switchTab('crew')"><i class="ti ti-users"></i> Crew — My Jobs</div>
+    <div class="tab" onclick="requestBossAccess()"><i class="ti ti-lock"></i> Boss</div>
+    <div class="tab active" onclick="switchTab('crew')"><i class="ti ti-users"></i> Crew</div>
+    <div class="tab" onclick="switchTab('invoices')"><i class="ti ti-file-invoice"></i> Invoices</div>
   </div>
 
-  <!-- BOSS PANEL -->
-  <div class="panel active" id="panel-boss">
-    <div class="toast" id="toast"><i class="ti ti-circle-check"></i> <span id="toast-msg"></span></div>
+  <!-- Page-level toast host: lives outside the panels so it stays visible
+       no matter which tab is active (mark done / save update / edit job
+       are all triggered from the Crew tab, not just the Boss tab). -->
+  <div class="toast" id="toast" style="margin:14px 14px 0"><i class="ti ti-circle-check"></i> <span id="toast-msg"></span></div>
 
+  <!-- BOSS PANEL -->
+  <div class="panel" id="panel-boss">
+    <div class="sub-tab-bar">
+      <button class="sub-tab active" onclick="switchBossSubTab(this,'dispatch')"><i class="ti ti-send"></i> Dispatch</button>
+      <button class="sub-tab" onclick="switchBossSubTab(this,'performance')"><i class="ti ti-chart-bar"></i> Performance</button>
+    </div>
+
+    <div id="boss-dispatch-tab">
     <div class="row2">
       <div>
         <label>Job site</label>
         <input type="text" id="customer" placeholder="e.g. Hillside Estates" />
       </div>
       <div>
-        <label>Phone</label>
+        <label>Site Super #</label>
         <input type="tel" id="phone" placeholder="(555) 000-0000" />
       </div>
     </div>
+
+    <label>Email <span style="font-weight:400;font-size:12px">(for sending the invoice later)</span></label>
+    <input type="email" id="email" placeholder="customer@email.com" />
 
     <label>Job site address</label>
     <input type="text" id="address" placeholder="123 Hillside Rd, Walled Lake, MI" />
 
     <label>Job type <span style="font-weight:400;font-size:12px">(select all that apply)</span></label>
-    <div class="job-type-grid">
-      <button class="jt-btn" onclick="toggleJT(this)">Silt Fence (2ft)</button>
-      <button class="jt-btn" onclick="toggleJT(this)">Silt Fence (3ft)</button>
-      <button class="jt-btn" onclick="toggleJT(this)">High Flow</button>
-      <button class="jt-btn" onclick="toggleJT(this)">Tree Fence</button>
-      <button class="jt-btn" onclick="toggleJT(this)">Mulch Blankets</button>
-      <button class="jt-btn" onclick="toggleJT(this)">Ventrac</button>
-      <button class="jt-btn" onclick="toggleJT(this)">Weed Whip</button>
+    <div class="job-type-grid" id="job-type-grid"></div>
+
+    <div id="qty-section" style="display:none;margin-top:14px">
+      <label>Qty / footage <span style="font-weight:400;font-size:12px">(one per job type selected)</span></label>
+      <div id="qty-inputs"></div>
     </div>
 
-    <div class="row3" style="margin-top:14px">
+    <div class="row2" style="margin-top:14px">
       <div>
         <label>Est. duration</label>
         <select id="duration">
@@ -175,13 +258,6 @@ textarea{resize:vertical;min-height:80px}
           <option>Full day</option>
           <option>Multiple days</option>
         </select>
-      </div>
-      <div>
-        <label>Qty / footage</label>
-        <div class="input-unit">
-          <input type="number" id="footage" placeholder="0" min="0" />
-          <span class="unit">ft</span>
-        </div>
       </div>
       <div>
         <label>Priority</label>
@@ -200,14 +276,14 @@ textarea{resize:vertical;min-height:80px}
     <label style="margin-top:14px">Recurring job</label>
     <div class="toggle-row" id="recurring-toggle" onclick="toggleRecurring()">
       <i class="ti ti-refresh"></i>
-      <span class="toggle-label">Mark as recurring / return visit</span>
+      <span class="toggle-label">Return visit — save as a Recurring Job template once this one's marked done</span>
       <div class="toggle-switch" id="recurring-switch"></div>
     </div>
 
     <label>Assign crew</label>
     <div class="crew-team-row">
-      <button class="ct-btn" onclick="selectTeam(this,'vaquero')">Vaquero's</button>
-      <button class="ct-btn" onclick="selectTeam(this,'crew2')">Crew 2</button>
+      <button class="ct-btn" onclick="selectTeam(this,'vaquero')">Vaquero's Crew</button>
+      <button class="ct-btn" onclick="selectTeam(this,'crew2')">Otis's Crew</button>
       <button class="ct-btn" onclick="selectTeam(this,'all')">All / Mixed</button>
     </div>
     <div class="member-grid" id="member-grid"></div>
@@ -224,30 +300,205 @@ textarea{resize:vertical;min-height:80px}
     <div class="photo-previews" id="previews"></div>
 
     <button class="dispatch-btn" onclick="dispatchJob()">
-      <i class="ti ti-send"></i> Dispatch Job to Crew
+      <img class="dispatch-btn-logo" id="dispatch-logo" src="" alt="" />
+      Send
     </button>
+    </div>
+
+    <div id="boss-performance-tab" style="display:none">
+      <div class="perf-range-toggle" style="margin-bottom:16px">
+        <button class="perf-range-btn selected" id="perf-range-7" onclick="setPerfRange(7,this)">Last 7 days</button>
+        <button class="perf-range-btn" id="perf-range-30" onclick="setPerfRange(30,this)">Last 30 days</button>
+      </div>
+
+      <div class="summary-box" id="summary-box">
+        <div class="summary-header"><i class="ti ti-chart-bar"></i> Combined total</div>
+        <div class="summary-grid">
+          <div class="summary-tile">
+            <div class="summary-value" id="summary-footage">0</div>
+            <div class="summary-label">Ft installed</div>
+          </div>
+          <div class="summary-tile">
+            <div class="summary-value" id="summary-qty">0</div>
+            <div class="summary-label">Qty installed</div>
+          </div>
+          <div class="summary-tile">
+            <div class="summary-value" id="summary-jobs">0</div>
+            <div class="summary-label">Jobs completed</div>
+          </div>
+          <div class="summary-tile">
+            <div class="summary-value" id="summary-revenue">$0</div>
+            <div class="summary-label">Invoiced</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="perf-crew-grid">
+        <div class="perf-crew-card vaquero">
+          <div class="perf-crew-header"><i class="ti ti-users"></i> Vaquero's Crew</div>
+          <div class="summary-grid">
+            <div class="summary-tile">
+              <div class="summary-value" id="perf-v-footage">0</div>
+              <div class="summary-label">Ft installed</div>
+            </div>
+            <div class="summary-tile">
+              <div class="summary-value" id="perf-v-qty">0</div>
+              <div class="summary-label">Qty installed</div>
+            </div>
+            <div class="summary-tile">
+              <div class="summary-value" id="perf-v-jobs">0</div>
+              <div class="summary-label">Jobs done</div>
+            </div>
+            <div class="summary-tile">
+              <div class="summary-value" id="perf-v-revenue">$0</div>
+              <div class="summary-label">Invoiced</div>
+            </div>
+          </div>
+        </div>
+        <div class="perf-crew-card crew2">
+          <div class="perf-crew-header"><i class="ti ti-users"></i> Otis's Crew</div>
+          <div class="summary-grid">
+            <div class="summary-tile">
+              <div class="summary-value" id="perf-c-footage">0</div>
+              <div class="summary-label">Ft installed</div>
+            </div>
+            <div class="summary-tile">
+              <div class="summary-value" id="perf-c-qty">0</div>
+              <div class="summary-label">Qty installed</div>
+            </div>
+            <div class="summary-tile">
+              <div class="summary-value" id="perf-c-jobs">0</div>
+              <div class="summary-label">Jobs done</div>
+            </div>
+            <div class="summary-tile">
+              <div class="summary-value" id="perf-c-revenue">$0</div>
+              <div class="summary-label">Invoiced</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="perf-note">Jobs dispatched to "All / Mixed" count toward the combined total above but aren't split between the two crews.</div>
+    </div>
   </div>
 
   <!-- CREW PANEL -->
-  <div class="panel" id="panel-crew">
+  <div class="panel active" id="panel-crew">
     <div class="sub-tab-bar">
       <button class="sub-tab active" onclick="switchSubTab(this,'active')"><i class="ti ti-list-check"></i> Active Jobs</button>
       <button class="sub-tab" onclick="switchSubTab(this,'history')"><i class="ti ti-archive"></i> Job History</button>
+      <button class="sub-tab" onclick="switchSubTab(this,'recurring')"><i class="ti ti-refresh"></i> Recurring</button>
     </div>
-    <div class="crew-filter">
+    <div class="crew-filter" id="crew-filter">
       <div class="filter-chip active" onclick="filterCrew(this,'all')">All</div>
-      <div class="filter-chip" onclick="filterCrew(this,'Mike')">Mike</div>
-      <div class="filter-chip" onclick="filterCrew(this,'Zac')">Zac</div>
-      <div class="filter-chip" onclick="filterCrew(this,'Kurt')">Kurt</div>
-      <div class="filter-chip" onclick="filterCrew(this,'Jonny')">Jonny</div>
-      <div class="filter-chip" onclick="filterCrew(this,'Zach')">Zach</div>
-      <div class="filter-chip" onclick="filterCrew(this,'Otis')">Otis</div>
-      <div class="filter-chip" onclick="filterCrew(this,'Jeff')">Jeff</div>
-      <div class="filter-chip" onclick="filterCrew(this,'Cole')">Cole</div>
-      <div class="filter-chip" onclick="filterCrew(this,'Bob')">Bob</div>
-      <div class="filter-chip" onclick="filterCrew(this,'Trav')">Trav</div>
     </div>
     <div id="job-list"></div>
+
+    <div id="recurring-tab" style="display:none">
+      <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:14px">
+        Recurring customers, saved once so the Boss doesn't have to retype the name, address, and phone number every visit. Marking a visit done never adds a duplicate here — this list only holds the templates.
+      </p>
+      <button class="dispatch-btn" id="add-recurring-btn" onclick="openRecurringForm(null)" style="display:none;margin-bottom:16px">
+        <i class="ti ti-plus"></i> Add Recurring Job
+      </button>
+      <div id="recurring-list"></div>
+    </div>
+  </div>
+
+  <!-- INVOICES PANEL -->
+  <div class="panel" id="panel-invoices">
+    <div class="toast" id="toast-inv"><i class="ti ti-circle-check"></i> <span id="toast-inv-msg"></span></div>
+
+    <div class="sub-tab-bar">
+      <button class="sub-tab active" onclick="switchInvoiceSubTab(this,'new')"><i class="ti ti-file-plus"></i> New Invoice</button>
+      <button class="sub-tab" onclick="switchInvoiceSubTab(this,'history')"><i class="ti ti-history"></i> Sent History</button>
+    </div>
+
+    <div id="invoice-new-tab">
+    <label>Select a job to invoice</label>
+    <select id="inv-job-select" onchange="loadInvoiceFromJob()">
+      <option value="">Choose a job...</option>
+    </select>
+
+    <div id="invoice-empty" class="empty">
+      <i class="ti ti-file-invoice"></i>Pick a job above to build its invoice.
+    </div>
+
+    <div id="invoice-form" style="display:none;margin-top:14px">
+      <div class="row2">
+        <div>
+          <label>Invoice #</label>
+          <input type="text" id="inv-number" />
+        </div>
+        <div>
+          <label>Date</label>
+          <input type="text" id="inv-date" />
+        </div>
+      </div>
+
+      <label>Bill to</label>
+      <input type="text" id="inv-billto" placeholder="Customer name" />
+
+      <label>Customer email <span style="font-weight:400;font-size:12px">(invoice is sent here)</span></label>
+      <input type="email" id="inv-email" placeholder="customer@email.com" />
+
+      <label>Site</label>
+      <input type="text" id="inv-site" placeholder="Job site address" />
+
+      <div class="row2">
+        <div>
+          <label>Foreman</label>
+          <input type="text" id="inv-foreman" />
+        </div>
+        <div>
+          <label>Phase (if needed)</label>
+          <input type="text" id="inv-phase" />
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label>As per</label>
+          <select id="inv-landvert">
+            <option value="Land">Land</option>
+            <option value="Vertical">Vertical</option>
+          </select>
+        </div>
+        <div>
+          <label>Job complete?</label>
+          <select id="inv-complete">
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Materials and locations</label>
+      <div id="inv-materials"></div>
+      <button type="button" class="status-btn" onclick="addInvoiceMaterialRow()" style="margin-top:8px">
+        <i class="ti ti-plus"></i> Add material
+      </button>
+
+      <label>Invoice total ($) <span style="font-weight:400;font-size:12px">(feeds the weekly revenue summary)</span></label>
+      <input type="number" step="0.01" min="0" id="inv-amount" placeholder="0.00" />
+
+      <label>Machine notes/time</label>
+      <textarea id="inv-machine-notes"></textarea>
+
+      <label>Labor notes/time</label>
+      <textarea id="inv-labor-notes"></textarea>
+
+      <label>Other notes</label>
+      <textarea id="inv-other-notes"></textarea>
+
+      <button class="dispatch-btn" id="inv-send-btn" onclick="sendInvoice()" style="margin-top:18px">
+        <i class="ti ti-send"></i> Send Invoice
+      </button>
+    </div>
+    </div>
+
+    <div id="invoice-history-tab" style="display:none">
+      <div id="invoice-history-list"></div>
+    </div>
   </div>
 </div>
 
@@ -256,19 +507,305 @@ textarea{resize:vertical;min-height:80px}
   <img id="lightbox-img" src="" alt="Job site photo" />
 </div>
 
+<div class="password-overlay" id="password-overlay">
+  <div class="password-box">
+    <i class="ti ti-lock"></i>
+    <h2>Boss Access</h2>
+    <p>Enter the password to open the dispatch tab.</p>
+    <input type="password" id="boss-password-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkBossPassword()" />
+    <div class="password-error" id="password-error" style="display:none">Incorrect password</div>
+    <button class="dispatch-btn" onclick="checkBossPassword()">Unlock</button>
+    <button class="status-btn" onclick="closePasswordOverlay()" style="margin-top:10px;justify-content:center;width:100%">Cancel</button>
+  </div>
+</div>
+
+<!-- Edit job modal — only reachable once the Boss tab is unlocked -->
+<div class="edit-overlay" id="edit-overlay">
+  <div class="edit-box">
+    <div class="edit-box-header">
+      <h2 id="edit-modal-title"><i class="ti ti-edit"></i> Edit Job</h2>
+      <button class="edit-close-btn" onclick="closeEditModal()"><i class="ti ti-x"></i></button>
+    </div>
+
+    <div class="row2">
+      <div>
+        <label>Job site</label>
+        <input type="text" id="edit-customer" />
+      </div>
+      <div>
+        <label>Site Super #</label>
+        <input type="tel" id="edit-phone" />
+      </div>
+    </div>
+
+    <label>Email</label>
+    <input type="email" id="edit-email" />
+
+    <label>Job site address</label>
+    <input type="text" id="edit-address" />
+
+    <label>Job type <span style="font-weight:400;font-size:12px">(select all that apply)</span></label>
+    <div class="job-type-grid" id="edit-jt-grid"></div>
+
+    <div id="edit-qty-section" style="display:none;margin-top:14px">
+      <label>Qty / footage</label>
+      <div id="edit-qty-inputs"></div>
+    </div>
+
+    <div class="row2" style="margin-top:14px">
+      <div>
+        <label>Est. duration</label>
+        <select id="edit-duration">
+          <option value="">Select...</option>
+          <option>1 hour</option>
+          <option>2 hours</option>
+          <option>3 hours</option>
+          <option>Half day</option>
+          <option>Full day</option>
+          <option>Multiple days</option>
+        </select>
+      </div>
+      <div>
+        <label>Priority</label>
+        <div class="priority-wrap">
+          <div class="priority-dot" id="edit-priority-dot"></div>
+          <select id="edit-priority-sel" onchange="updateEditPriorityDot()">
+            <option value="">Select...</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="edit-recurring-row">
+      <label style="margin-top:14px">Recurring job</label>
+      <div class="toggle-row" id="edit-recurring-toggle" onclick="toggleEditRecurring()">
+        <i class="ti ti-refresh"></i>
+        <span class="toggle-label">Mark as recurring / return visit</span>
+        <div class="toggle-switch" id="edit-recurring-switch"></div>
+      </div>
+    </div>
+
+    <label>Assign crew</label>
+    <div class="member-grid" id="edit-member-grid"></div>
+
+    <label>Job notes</label>
+    <textarea id="edit-notes"></textarea>
+
+    <button class="dispatch-btn" id="edit-save-btn" onclick="saveEditedJob()" style="margin-top:18px">
+      <i class="ti ti-device-floppy"></i> Save changes
+    </button>
+  </div>
+</div>
+
+<!-- Firebase (compat build so the rest of this file can keep using plain global functions/onclick handlers) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+<!-- EmailJS (sends the invoice email straight from the app, no backend needed) -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
 <script>
+/* ================================================================
+   COMPANY CONFIG — everything below is specific to this business.
+   To spin up a new company's copy of this app, this fenced block
+   is the ONLY section that should need editing.
+   ================================================================ */
+
+const COMPANY_NAME = 'Clearwater Dispatch';                    // browser tab title + app header
+const COMPANY_LEGAL_NAME = 'Clearwater Erosion Control Inc.';   // "from" name on sent invoices
+
+// Logo shown in the header and on the dispatch button. Any data: URI or hosted image URL works.
+const LOGO_DATA_URI = "data:image/png;base64,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";
+
+// Firebase project (Firestore + Storage) — from your Firebase console.
+const firebaseConfig = {
+  apiKey: "AIzaSyDSslbIPw4N68nlUonigbqpDhLFsQNz0EQ",
+  authDomain: "clearwater-scheduling.firebaseapp.com",
+  projectId: "clearwater-scheduling",
+  storageBucket: "clearwater-scheduling.firebasestorage.app",
+  messagingSenderId: "1078468707265",
+  appId: "1:1078468707265:web:909bed2d09540c7e8a2540"
+};
+
+// EmailJS — replace these 3 placeholders with your real values from emailjs.com
+// (Public Key from Account > General, Service ID from Email Services, Template ID from Email Templates).
+// Invoices can't send until these are filled in.
+const EMAILJS_PUBLIC_KEY = "YOUR_EMAILJS_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID = "YOUR_EMAILJS_SERVICE_ID";
+const EMAILJS_TEMPLATE_ID = "YOUR_EMAILJS_TEMPLATE_ID";
+
+// Crews and members. role:'foreman' drives the gold star badge and the invoice auto-fill.
 const CREWS={
   vaquero:[{name:'Mike',role:'foreman'},{name:'Zac',role:'foreman'},{name:'Kurt',role:''},{name:'Jonny',role:''},{name:'Zach',role:''}],
   crew2:[{name:'Otis',role:'foreman'},{name:'Jeff',role:''},{name:'Cole',role:''},{name:'Bob',role:''}],
   solo:[{name:'Trav',role:''}]
 };
 
-let photos=[],jobs=[],crewFilter='all',activeTeam='',isRecurring=false,crewSubTab='active';
+// Job types offered when dispatching, and the unit each is measured in (ft / hrs / Qty).
+const JOB_TYPE_UNITS={
+  'Silt Fence (2ft)':'ft','Silt Fence (3ft)':'ft','High Flow':'ft','Tree Fence':'ft','Silt Saver':'ft',
+  'Ventrac':'hrs','Weed Whip':'hrs',
+  'Mulch Blankets':'Qty','Waddles':'Qty','Rakes':'Qty','Staples':'Qty'
+};
 
-// Load saved jobs from localStorage
-try{const saved=localStorage.getItem('ec_jobs');if(saved)jobs=JSON.parse(saved);}catch(e){}
+// Password gating the Boss tab. This is a simple deterrent, not real security —
+// anyone who views this file's source can find it. Good enough to keep casual
+// crew members out; change it any time by editing this value.
+const BOSS_PASSWORD = "Clearwater2026";
 
-function saveJobs(){try{localStorage.setItem('ec_jobs',JSON.stringify(jobs));}catch(e){}}
+/* ================================================================
+   END COMPANY CONFIG — nothing below this line should need editing
+   for a new company clone.
+   ================================================================ */
+
+document.getElementById('app-logo').src=LOGO_DATA_URI;
+document.getElementById('dispatch-logo').src=LOGO_DATA_URI;
+document.title=COMPANY_NAME;
+document.querySelector('.app-header h1').textContent=COMPANY_NAME;
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const storage = firebase.storage();
+if(typeof emailjs!=='undefined')emailjs.init({publicKey:EMAILJS_PUBLIC_KEY});
+
+// Offline persistence: Firestore caches reads and queues plain field writes
+// (status changes, note text, edits) locally via IndexedDB and syncs them
+// automatically once the connection returns. This does NOT cover Storage
+// photo uploads, which are handled separately by the pending-ops queue below.
+db.enablePersistence({synchronizeTabs:true}).catch(err=>{
+  if(err.code==='failed-precondition'){
+    console.warn('Offline persistence unavailable: multiple tabs open at once.');
+  }else if(err.code==='unimplemented'){
+    console.warn('Offline persistence not supported in this browser.');
+  }
+});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(err=>console.error('Service worker registration failed:',err));
+  });
+}
+
+function unitFor(jobType){return JOB_TYPE_UNITS[jobType]||'ft';}
+
+// Quantities used to be stored as a plain string ("500") with the unit
+// implied by JOB_TYPE_UNITS. The Boss can now override the unit per job type
+// at dispatch/edit time, so newer jobs store {qty,unit} instead. These two
+// helpers read either shape so older jobs already in Firestore keep working.
+function qtyOf(entry){return (entry && typeof entry==='object')?(entry.qty||''):(entry||'');}
+function unitOf(jobType,entry){return (entry && typeof entry==='object' && entry.unit)?entry.unit:unitFor(jobType);}
+
+let photos=[],jobs=[],crewFilter='all',activeTeam='',isRecurring=false,crewSubTab='active',jobtypeQuantities={},pendingUpdates={};
+let sentInvoices=[],invoiceSubTab='new';
+let editingJobId=null,editIsRecurring=false,editJobtypeQuantities={},editMode='job';
+let recurringJobs=[];
+let bossSubTab='dispatch',perfRangeDays=7;
+// Set by loadDispatchFormFromTemplate() when the Boss dispatches "this week's"
+// visit from an existing recurring template — lets dispatchJob()/markDone()
+// know not to save yet another template for the same customer.
+let dispatchFromTemplateId=null;
+
+// Live sync: Firestore pushes updates to every connected device in real time.
+db.collection('jobs').orderBy('createdAt','desc').onSnapshot(snap=>{
+  jobs = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderJobs();
+  renderInvoiceJobPicker();
+  renderPerformance();
+}, err=>{
+  console.error('Firestore sync error:', err);
+  showToast('Sync error — check your connection or Firestore rules', true);
+});
+
+// Sent-invoice history, synced the same way.
+db.collection('invoices').orderBy('sentAt','desc').onSnapshot(snap=>{
+  sentInvoices = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderInvoiceHistory();
+  renderPerformance();
+}, err=>{
+  console.error('Invoice history sync error:', err);
+});
+
+// Recurring job templates — separate from live jobs entirely, so a completed
+// visit never lingers in (or duplicates back into) the active job list.
+db.collection('recurringJobs').orderBy('createdAt','desc').onSnapshot(snap=>{
+  recurringJobs = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderRecurringList();
+}, err=>{
+  console.error('Recurring jobs sync error:', err);
+});
+
+// ---- Offline photo-upload queue ----
+// Firestore field writes (status, notes, edits) are queued automatically by
+// enablePersistence() above. Storage uploads are not, so photos attached
+// while offline are stashed here and retried once the connection returns.
+// Note: this rides on localStorage (a few MB per browser), so it's meant for
+// a modest backlog of photos, not unlimited offline storage.
+const PENDING_KEY='cw_pending_photo_ops';
+
+function getPendingOps(){
+  try{return JSON.parse(localStorage.getItem(PENDING_KEY)||'[]');}catch{return [];}
+}
+function setPendingOps(ops){
+  try{localStorage.setItem(PENDING_KEY,JSON.stringify(ops));return true;}
+  catch(err){console.error('Could not persist offline queue (storage full?):',err);return false;}
+}
+function queuePendingOp(op){
+  const ops=getPendingOps();
+  ops.push(op);
+  if(!setPendingOps(ops)){
+    showToast('Could not save this for offline sync — your device storage may be full',true);
+  }
+  updateOfflineBanner();
+}
+
+async function flushPendingOps(){
+  if(!navigator.onLine)return;
+  const ops=getPendingOps();
+  if(!ops.length){updateOfflineBanner();return;}
+  const remaining=[];
+  for(const op of ops){
+    try{
+      if(op.type==='dispatch'){
+        await performDispatch(op.payload);
+      }else if(op.type==='photo-update'){
+        const photoUrls=[];
+        for(let i=0;i<op.photos.length;i++){
+          const snap=await storage.ref(`jobs/${op.jobId}/update-${Date.now()}-${i}.jpg`).putString(op.photos[i],'data_url');
+          photoUrls.push(await snap.ref.getDownloadURL());
+        }
+        await db.collection('jobs').doc(op.jobId).update({photos:firebase.firestore.FieldValue.arrayUnion(...photoUrls)});
+      }
+    }catch(err){
+      console.error('Retry failed, will try again later:',err);
+      remaining.push(op);
+    }
+  }
+  setPendingOps(remaining);
+  updateOfflineBanner();
+  if(remaining.length<ops.length)showToast('Offline changes synced');
+}
+
+function updateOfflineBanner(){
+  const banner=document.getElementById('offline-banner');
+  const textEl=document.getElementById('offline-banner-text');
+  if(!banner||!textEl)return;
+  const pendingCount=getPendingOps().length;
+  if(!navigator.onLine){
+    banner.classList.add('show');
+    textEl.textContent="You're offline — new dispatches and photo updates will save on this device and sync automatically once you're back in range.";
+  }else if(pendingCount>0){
+    banner.classList.add('show');
+    textEl.textContent=`Back online — syncing ${pendingCount} pending photo update${pendingCount>1?'s':''}...`;
+  }else{
+    banner.classList.remove('show');
+  }
+}
+window.addEventListener('online',()=>{updateOfflineBanner();flushPendingOps();});
+window.addEventListener('offline',updateOfflineBanner);
 
 function updatePriorityDot(){
   const val=document.getElementById('priority-sel').value;
@@ -277,15 +814,89 @@ function updatePriorityDot(){
 }
 
 function switchTab(t){
-  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===(t==='boss'?0:1)));
+  const idx=t==='boss'?0:t==='crew'?1:2;
+  document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('active',i===idx));
   document.getElementById('panel-boss').classList.toggle('active',t==='boss');
   document.getElementById('panel-crew').classList.toggle('active',t==='crew');
+  document.getElementById('panel-invoices').classList.toggle('active',t==='invoices');
   if(t==='crew')renderJobs();
+  if(t==='invoices')renderInvoiceJobPicker();
+  if(t==='boss')renderPerformance();
+}
+
+// --- Boss tab password gate ---
+// A simple deterrent (not real security) so casual crew members don't wander
+// into the dispatch tab. Once unlocked, this device stays unlocked.
+function isBossUnlocked(){
+  return localStorage.getItem('boss_unlocked')==='true';
+}
+
+function requestBossAccess(){
+  if(isBossUnlocked()){
+    switchTab('boss');
+    return;
+  }
+  document.getElementById('password-overlay').classList.add('open');
+  document.getElementById('boss-password-input').value='';
+  document.getElementById('password-error').style.display='none';
+  setTimeout(()=>document.getElementById('boss-password-input').focus(),50);
+}
+
+function closePasswordOverlay(){
+  document.getElementById('password-overlay').classList.remove('open');
+}
+
+function checkBossPassword(){
+  const val=document.getElementById('boss-password-input').value;
+  if(val===BOSS_PASSWORD){
+    localStorage.setItem('boss_unlocked','true');
+    closePasswordOverlay();
+    switchTab('boss');
+  }else{
+    document.getElementById('password-error').style.display='block';
+  }
+}
+
+// Boss tab's own sub-tabs: the Dispatch form (default) and the Performance
+// dashboard. Both stay in the DOM at all times (like Crew's Active/Recurring
+// sub-tabs) — switching just toggles which one is visible — so Firestore
+// listeners can keep the Performance numbers fresh even while it's hidden.
+function switchBossSubTab(btn,tab){
+  document.querySelectorAll('#panel-boss .sub-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  bossSubTab=tab;
+  document.getElementById('boss-dispatch-tab').style.display=tab==='dispatch'?'block':'none';
+  document.getElementById('boss-performance-tab').style.display=tab==='performance'?'block':'none';
+  if(tab==='performance')renderPerformance();
+}
+
+function setPerfRange(days,btn){
+  perfRangeDays=days;
+  document.querySelectorAll('.perf-range-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  renderPerformance();
 }
 
 function switchSubTab(btn,tab){
-  document.querySelectorAll('.sub-tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');crewSubTab=tab;renderJobs();
+  document.querySelectorAll('#panel-crew .sub-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');crewSubTab=tab;
+
+  const isRecurringTab=tab==='recurring';
+  document.getElementById('job-list').style.display=isRecurringTab?'none':'block';
+  document.getElementById('crew-filter').style.display=isRecurringTab?'none':'flex';
+  document.getElementById('recurring-tab').style.display=isRecurringTab?'block':'none';
+  document.getElementById('add-recurring-btn').style.display=(isRecurringTab&&isBossUnlocked())?'flex':'none';
+
+  if(isRecurringTab)renderRecurringList();
+  else renderJobs();
+}
+
+function switchInvoiceSubTab(btn,tab){
+  document.querySelectorAll('#panel-invoices .sub-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');invoiceSubTab=tab;
+  document.getElementById('invoice-new-tab').style.display=tab==='new'?'block':'none';
+  document.getElementById('invoice-history-tab').style.display=tab==='history'?'block':'none';
+  if(tab==='history')renderInvoiceHistory();
 }
 
 function toggleRecurring(){
@@ -298,21 +909,76 @@ function selectTeam(btn,team){
   document.querySelectorAll('.ct-btn').forEach(b=>b.className='ct-btn');
   btn.classList.add(team==='vaquero'?'sel-v':team==='crew2'?'sel-2':'sel-all');
   activeTeam=team;
-  let members=team==='vaquero'?[...CREWS.vaquero,...CREWS.solo]:team==='crew2'?[...CREWS.crew2,...CREWS.solo]:[...CREWS.vaquero,...CREWS.crew2,...CREWS.solo];
-  renderMembers(members,team==='all'?[]:members.filter(m=>m.role!==''));
+
+  let members, preselect;
+  if(team==='vaquero'){
+    members=[...CREWS.vaquero,...CREWS.solo];
+    preselect=CREWS.vaquero.filter(m=>m.name!=='Mike');
+  }else if(team==='crew2'){
+    const mike=CREWS.vaquero.find(m=>m.name==='Mike');
+    members=[...CREWS.crew2,mike,...CREWS.solo];
+    preselect=CREWS.crew2;
+  }else{
+    members=[...CREWS.vaquero,...CREWS.crew2,...CREWS.solo];
+    preselect=[];
+  }
+  renderMembers(members,preselect);
 }
 
 function renderMembers(members,preselect){
   document.getElementById('member-grid').innerHTML=members.map(m=>`
     <button class="m-btn${preselect.some(p=>p.name===m.name)?' selected':''}" onclick="toggleMember(this)">
-      ${m.name}${m.role?`<span class="role">${m.role}</span>`:''}
+      ${m.name}${m.role?`<span class="role"><i class="ti ti-star-filled"></i></span>`:''}
     </button>`).join('');
 }
 
 function toggleMember(btn){btn.classList.toggle('selected');}
-function getSelectedMembers(){return [...document.querySelectorAll('.m-btn.selected')].map(b=>b.textContent.replace('foreman','').trim());}
-function toggleJT(btn){btn.classList.toggle('selected');}
-function getSelectedJTs(){return [...document.querySelectorAll('.jt-btn.selected')].map(b=>b.textContent);}
+// Scoped to #member-grid / #job-type-grid specifically — the edit-job modal
+// reuses the same .m-btn/.jt-btn classes in its own grid, so an unscoped
+// query here would also pick up selections made while editing a job.
+function getSelectedMembers(){return [...document.querySelectorAll('#member-grid .m-btn.selected')].map(b=>b.textContent.trim());}
+function toggleJT(btn){btn.classList.toggle('selected');renderQtyInputs();}
+function getSelectedJTs(){return [...document.querySelectorAll('#job-type-grid .jt-btn.selected')].map(b=>b.textContent);}
+
+function renderQtyInputs(){
+  const selected=getSelectedJTs();
+  const carried={};
+  selected.forEach(t=>{
+    const existing=jobtypeQuantities[t];
+    carried[t]=(existing && typeof existing==='object')?existing:{qty:existing||'',unit:unitFor(t)};
+  });
+  jobtypeQuantities=carried;
+
+  const section=document.getElementById('qty-section');
+  const container=document.getElementById('qty-inputs');
+  if(!selected.length){
+    section.style.display='none';
+    container.innerHTML='';
+    return;
+  }
+  section.style.display='block';
+  container.innerHTML=selected.map(t=>{
+    const entry=jobtypeQuantities[t];
+    return `
+    <div class="qty-row">
+      <span class="qty-label">${t}</span>
+      <input type="number" min="0" placeholder="0" class="qty-input" value="${entry.qty}" />
+      <div class="unit-toggle">
+        <button type="button" class="unit-btn${entry.unit==='ft'?' selected':''}" onclick="setJTUnit(this,'${t}','ft')">ft</button>
+        <button type="button" class="unit-btn${entry.unit==='Qty'?' selected':''}" onclick="setJTUnit(this,'${t}','Qty')">Qty</button>
+      </div>
+    </div>`;
+  }).join('');
+  container.querySelectorAll('.qty-input').forEach((inp,i)=>{
+    inp.addEventListener('input',()=>{jobtypeQuantities[selected[i]].qty=inp.value;});
+  });
+}
+
+function setJTUnit(btn,jobType,unit){
+  jobtypeQuantities[jobType].unit=unit;
+  btn.parentElement.querySelectorAll('.unit-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
 
 function handlePhotos(e){
   [...e.target.files].forEach(f=>{
@@ -331,48 +997,91 @@ function renderPreviews(){
 }
 function removePhoto(i){photos.splice(i,1);renderPreviews();}
 
-function dispatchJob(){
+async function dispatchJob(){
   const customer=document.getElementById('customer').value.trim();
   const phone=document.getElementById('phone').value.trim();
+  const email=document.getElementById('email').value.trim();
   const address=document.getElementById('address').value.trim();
   const jobtypes=getSelectedJTs();
   const members=getSelectedMembers();
   const notes=document.getElementById('notes').value.trim();
   const duration=document.getElementById('duration').value;
-  const footage=document.getElementById('footage').value;
+  const quantities={};
+  jobtypes.forEach(t=>{
+    const entry=jobtypeQuantities[t];
+    if(entry && qtyOf(entry))quantities[t]={qty:qtyOf(entry),unit:unitOf(t,entry)};
+  });
   const priority=document.getElementById('priority-sel').value;
   if(!customer||!address||!jobtypes.length||!members.length||!priority){
     alert('Please fill in: job site, address, at least one job type, priority, and at least one crew member.');return;
   }
-  const teamLabel=activeTeam==='vaquero'?"Vaquero's Crew":activeTeam==='crew2'?'Crew 2':'Mixed';
-  jobs.unshift({
-    id:Date.now(),customer,phone,address,jobtypes,members,teamLabel,
-    notes,priority,duration,footage,recurring:isRecurring,
-    photos:[...photos],status:'New',
+  const teamLabel=activeTeam==='vaquero'?"Vaquero's Crew":activeTeam==='crew2'?"Otis's Crew":'Mixed';
+  const payload={customer,phone,email,address,jobtypes,members,teamLabel,notes,priority,duration,quantities,recurring:isRecurring,photosData:[...photos],sourceTemplateId:dispatchFromTemplateId};
+
+  const dispatchBtn=document.querySelector('.dispatch-btn');
+  const originalBtnHtml=dispatchBtn.innerHTML;
+  dispatchBtn.disabled=true;
+  dispatchBtn.innerHTML='<i class="ti ti-loader-2"></i> Dispatching...';
+
+  try{
+    await performDispatch(payload);
+    showToast(`Job dispatched to ${members.join(', ')}`);
+    resetForm();
+  }catch(err){
+    console.error('Dispatch failed, queueing for retry when back online:',err);
+    queuePendingOp({type:'dispatch',payload});
+    showToast(`No connection — job for ${members.join(', ')} saved on this device and will dispatch once you're back online`,true);
+    resetForm();
+  }finally{
+    dispatchBtn.disabled=false;
+    dispatchBtn.innerHTML=originalBtnHtml;
+  }
+}
+
+// The actual Firestore/Storage write, factored out so the offline retry
+// queue (flushPendingOps) can replay it later using the same logic.
+async function performDispatch(payload){
+  const jobRef=db.collection('jobs').doc();
+
+  // Upload any photos to Firebase Storage first, collecting their URLs.
+  // If this throws (e.g. no connection), nothing has been written to
+  // Firestore yet, so the caller can safely queue the whole payload for retry.
+  const photoUrls=[];
+  for(let i=0;i<payload.photosData.length;i++){
+    const snap=await storage.ref(`jobs/${jobRef.id}/photo${i}.jpg`).putString(payload.photosData[i],'data_url');
+    photoUrls.push(await snap.ref.getDownloadURL());
+  }
+
+  await jobRef.set({
+    customer:payload.customer,phone:payload.phone,email:payload.email,address:payload.address,
+    jobtypes:payload.jobtypes,members:payload.members,teamLabel:payload.teamLabel,
+    notes:payload.notes,priority:payload.priority,duration:payload.duration,quantities:payload.quantities,
+    recurring:payload.recurring,sourceTemplateId:payload.sourceTemplateId||null,photos:photoUrls,status:'New',
     time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
-    date:new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'})
+    date:new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'}),
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
   });
-  saveJobs();
-  showToast(`Job dispatched to ${members.join(', ')}`);
-  resetForm();
 }
 
 function resetForm(){
-  ['customer','phone','address','notes','footage'].forEach(id=>document.getElementById(id).value='');
+  ['customer','phone','email','address','notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('duration').value='';
   document.getElementById('priority-sel').value='';
   document.getElementById('priority-dot').className='priority-dot';
-  document.querySelectorAll('.jt-btn,.ct-btn').forEach(b=>{b.className=b.classList.contains('jt-btn')?'jt-btn':'ct-btn';});
+  document.querySelectorAll('#job-type-grid .jt-btn,.ct-btn').forEach(b=>{b.className=b.classList.contains('jt-btn')?'jt-btn':'ct-btn';});
+  jobtypeQuantities={};renderQtyInputs();
   document.getElementById('member-grid').innerHTML='';
   isRecurring=false;
   document.getElementById('recurring-toggle').classList.remove('active');
   document.getElementById('recurring-switch').classList.remove('on');
   activeTeam='';photos=[];renderPreviews();
+  dispatchFromTemplateId=null;
 }
 
-function showToast(msg){
+function showToast(msg,isError){
   const t=document.getElementById('toast');
   document.getElementById('toast-msg').textContent=msg;
+  t.classList.toggle('error',!!isError);
   t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3500);
 }
@@ -386,6 +1095,89 @@ function filterCrew(chip,val){
 function priBadge(p){
   const cls=p==='Low'?'low':p==='Medium'?'med':'high';
   return `<span class="pri-badge ${cls}"><span class="dot"></span>${p}</span>`;
+}
+
+// Parses the "Jul 14, 2026"-style display strings this app stores for job
+// dates back into a real Date, for the performance dashboard below.
+function parseDisplayDate(str){
+  if(!str)return null;
+  const d=new Date(str);
+  return isNaN(d.getTime())?null:d;
+}
+
+// Performance dashboard (Boss tab → Performance sub-tab). Shows footage
+// installed / jobs completed / $ invoiced for the selected range (7 or 30
+// days), both combined and split Vaquero's Crew vs Otis's Crew. A job
+// dispatched to "All / Mixed" only has a single team, so it's counted in
+// the combined total but left out of the per-crew breakdown — there's no
+// clean way to split one job's footage/revenue between two crews.
+function renderPerformance(){
+  const footageEl=document.getElementById('summary-footage');
+  if(!footageEl)return; // dashboard only exists in the Boss panel
+
+  const rangeStart=new Date(Date.now()-perfRangeDays*24*60*60*1000);
+  let footage=0, qtyInstalled=0, jobsCompleted=0, revenue=0;
+  const byTeam={
+    "Vaquero's Crew":{footage:0,qty:0,jobsCompleted:0,revenue:0},
+    "Otis's Crew":{footage:0,qty:0,jobsCompleted:0,revenue:0}
+  };
+  // jobId -> teamLabel, so sent invoices (which only store jobId) can be
+  // attributed back to the crew that did the work.
+  const jobTeamById={};
+  jobs.forEach(j=>{ if(j.id)jobTeamById[j.id]=j.teamLabel; });
+
+  jobs.forEach(j=>{
+    const jd=parseDisplayDate(j.date);
+    const inRange=jd && jd>=rangeStart;
+    if(!inRange)return;
+
+    let jobFootage=0, jobQty=0;
+    if(j.quantities){
+      Object.entries(j.quantities).forEach(([t,q])=>{
+        const unit=unitOf(t,q);
+        if(unit==='ft')jobFootage+=parseFloat(qtyOf(q))||0;
+        else if(unit==='Qty')jobQty+=parseFloat(qtyOf(q))||0;
+      });
+    }
+    footage+=jobFootage;
+    qtyInstalled+=jobQty;
+    if(j.status==='Done')jobsCompleted++;
+
+    const bucket=byTeam[j.teamLabel];
+    if(bucket){
+      bucket.footage+=jobFootage;
+      bucket.qty+=jobQty;
+      if(j.status==='Done')bucket.jobsCompleted++;
+    }
+  });
+
+  sentInvoices.forEach(inv=>{
+    let sentDate=null;
+    if(inv.sentAt && typeof inv.sentAt.toDate==='function')sentDate=inv.sentAt.toDate();
+    else sentDate=parseDisplayDate(inv.invoiceDate);
+    if(!(sentDate && sentDate>=rangeStart))return;
+
+    const amount=parseFloat(inv.amount)||0;
+    revenue+=amount;
+    const team=inv.jobId?jobTeamById[inv.jobId]:null;
+    const bucket=team && byTeam[team];
+    if(bucket)bucket.revenue+=amount;
+  });
+
+  footageEl.textContent=footage.toLocaleString();
+  document.getElementById('summary-qty').textContent=qtyInstalled.toLocaleString();
+  document.getElementById('summary-jobs').textContent=jobsCompleted;
+  document.getElementById('summary-revenue').textContent='$'+revenue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  const v=byTeam["Vaquero's Crew"], c=byTeam["Otis's Crew"];
+  document.getElementById('perf-v-footage').textContent=v.footage.toLocaleString();
+  document.getElementById('perf-v-qty').textContent=v.qty.toLocaleString();
+  document.getElementById('perf-v-jobs').textContent=v.jobsCompleted;
+  document.getElementById('perf-v-revenue').textContent='$'+v.revenue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('perf-c-footage').textContent=c.footage.toLocaleString();
+  document.getElementById('perf-c-qty').textContent=c.qty.toLocaleString();
+  document.getElementById('perf-c-jobs').textContent=c.jobsCompleted;
+  document.getElementById('perf-c-revenue').textContent='$'+c.revenue.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
 function renderJobs(){
@@ -411,40 +1203,669 @@ function renderJobs(){
       </div>
       <div style="margin-bottom:6px">${j.jobtypes.map(t=>`<span class="jt-tag">${t}</span>`).join('')}</div>
       <div style="margin-bottom:6px">${j.members.map(m=>`<span class="member-tag"><i class="ti ti-user" style="font-size:10px"></i> ${m}</span>`).join('')}</div>
-      ${(j.duration||j.footage)?`<div class="job-detail-row">
+      ${(j.duration||j.footage||(j.quantities&&Object.keys(j.quantities).length))?`<div class="job-detail-row">
         ${j.duration?`<span><i class="ti ti-clock"></i> ${j.duration}</span>`:''}
         ${j.footage?`<span><i class="ti ti-ruler"></i> ${j.footage} ft</span>`:''}
+        ${j.quantities?Object.entries(j.quantities).map(([t,q])=>`<span><i class="ti ti-ruler"></i> ${t}: ${qtyOf(q)} ${unitOf(t,q)}</span>`).join(''):''}
       </div>`:''}
       <div style="font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:4px;color:var(--color-text-secondary)">
         <i class="ti ti-map-pin" style="font-size:13px"></i> ${j.address}
       </div>
       ${j.phone?`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px"><i class="ti ti-phone" style="font-size:13px"></i> ${j.phone}</div>`:''}
       ${j.notes?`<div class="job-notes">"${j.notes}"</div>`:''}
-      ${j.photos.length?`<div class="job-thumbs">${j.photos.map((p,pi)=>`<img class="job-thumb" src="${p}" alt="Site photo ${pi+1}" onclick="openLightbox('${p}')" />`).join('')}</div>`:''}
+      ${j.crewNotes&&j.crewNotes.length?j.crewNotes.map(n=>`<div class="job-notes"><i class="ti ti-message-2" style="font-size:11px"></i> "${n.text}" <span style="opacity:.6">— ${n.date} ${n.time}</span></div>`).join(''):''}
+      ${j.photos&&j.photos.length?`<div class="job-thumbs">${j.photos.map((p,pi)=>`<img class="job-thumb" src="${p}" alt="Site photo ${pi+1}" onclick="openLightbox('${p}')" />`).join('')}</div>`:''}
+      ${!isHistory?`
+      <div class="update-panel" id="update-panel-${j.id}" style="display:none">
+        <textarea class="update-note" id="update-note-${j.id}" placeholder="Add a note before marking done..."></textarea>
+        <div class="photo-upload" onclick="document.getElementById('update-photo-input-${j.id}').click()">
+          <i class="ti ti-camera-plus"></i> Tap to add photos
+        </div>
+        <input type="file" id="update-photo-input-${j.id}" multiple accept="image/*" style="display:none" onchange="handleUpdatePhotos(event,'${j.id}')" />
+        <div class="photo-previews" id="update-previews-${j.id}"></div>
+        <button class="status-btn" onclick="saveUpdate('${j.id}')" style="margin-top:10px">
+          <i class="ti ti-device-floppy"></i> Save update
+        </button>
+      </div>`:''}
       <div class="status-row">
+        ${isBossUnlocked()?`<button class="status-btn" onclick="openEditJob('${j.id}')"><i class="ti ti-edit"></i> Edit</button>`:''}
         ${!isHistory
-          ?`<button class="status-btn" onclick="markDone(${j.id})"><i class="ti ti-circle-check"></i> Mark as done</button>`
-          :`<button class="status-btn" onclick="restoreJob(${j.id})"><i class="ti ti-arrow-back-up"></i> Restore</button>`
+          ?`<button class="status-btn" onclick="toggleUpdatePanel('${j.id}')"><i class="ti ti-note"></i> Add note/photo</button>
+             <button class="status-btn" onclick="markDone('${j.id}')"><i class="ti ti-circle-check"></i> Mark as done</button>`
+          :`<button class="status-btn" onclick="restoreJob('${j.id}')"><i class="ti ti-arrow-back-up"></i> Restore</button>`
         }
-        <button class="status-btn" onclick="deleteJob(${j.id})" style="margin-left:auto"><i class="ti ti-trash"></i></button>
+        <button class="status-btn" onclick="deleteJob('${j.id}')" style="margin-left:auto"><i class="ti ti-trash"></i></button>
       </div>
     </div>`).join('');
 }
 
-function markDone(id){const j=jobs.find(j=>j.id===id);if(j){j.status='Done';saveJobs();renderJobs();}}
+function toggleUpdatePanel(id){
+  const panel=document.getElementById(`update-panel-${id}`);
+  if(!panel)return;
+  panel.style.display=panel.style.display==='none'?'block':'none';
+}
+
+function handleUpdatePhotos(e,id){
+  if(!pendingUpdates[id])pendingUpdates[id]=[];
+  [...e.target.files].forEach(f=>{
+    const r=new FileReader();
+    r.onload=ev=>{pendingUpdates[id].push(ev.target.result);renderUpdatePreviews(id);};
+    r.readAsDataURL(f);
+  });
+}
+
+function renderUpdatePreviews(id){
+  const container=document.getElementById(`update-previews-${id}`);
+  if(!container)return;
+  const list=pendingUpdates[id]||[];
+  container.innerHTML=list.map((p,i)=>`
+    <div class="photo-thumb">
+      <img src="${p}" alt="New photo ${i+1}"/>
+      <button class="rm" onclick="removeUpdatePhoto('${id}',${i})" aria-label="Remove photo"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+}
+
+function removeUpdatePhoto(id,i){
+  pendingUpdates[id].splice(i,1);
+  renderUpdatePreviews(id);
+}
+
+async function saveUpdate(id){
+  const noteEl=document.getElementById(`update-note-${id}`);
+  const noteText=noteEl?noteEl.value.trim():'';
+  const newPhotos=pendingUpdates[id]||[];
+  if(!noteText && !newPhotos.length){
+    showToast('Add a note or photo before saving',true);
+    return;
+  }
+  const saveBtn=document.querySelector(`#update-panel-${id} .status-btn`);
+  const originalHtml=saveBtn?saveBtn.innerHTML:'';
+  if(saveBtn){saveBtn.disabled=true;saveBtn.innerHTML='<i class="ti ti-loader-2"></i> Saving...';}
+
+  try{
+    // Note text goes through Firestore directly — thanks to offline
+    // persistence this queues and syncs on its own even with no connection,
+    // so it's safe to await unconditionally here.
+    if(noteText){
+      await db.collection('jobs').doc(id).update({
+        crewNotes:firebase.firestore.FieldValue.arrayUnion({
+          text:noteText,
+          time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+          date:new Date().toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'})
+        })
+      });
+    }
+
+    if(newPhotos.length){
+      try{
+        const photoUrls=[];
+        for(let i=0;i<newPhotos.length;i++){
+          const snap=await storage.ref(`jobs/${id}/update-${Date.now()}-${i}.jpg`).putString(newPhotos[i],'data_url');
+          photoUrls.push(await snap.ref.getDownloadURL());
+        }
+        await db.collection('jobs').doc(id).update({photos:firebase.firestore.FieldValue.arrayUnion(...photoUrls)});
+      }catch(photoErr){
+        // Storage uploads aren't covered by Firestore's offline persistence,
+        // so queue just the photos for retry — the note above is already saved.
+        console.error('Photo upload failed, queueing for retry when back online:',photoErr);
+        queuePendingOp({type:'photo-update',jobId:id,photos:[...newPhotos]});
+        pendingUpdates[id]=[];
+        if(noteEl)noteEl.value='';
+        renderUpdatePreviews(id);
+        toggleUpdatePanel(id);
+        showToast(noteText?'Note saved. Photos will upload once you\'re back online.':'No connection — photos will upload once you\'re back online.',true);
+        return;
+      }
+    }
+
+    pendingUpdates[id]=[];
+    if(noteEl)noteEl.value='';
+    renderUpdatePreviews(id);
+    toggleUpdatePanel(id);
+    showToast('Update saved');
+  }catch(err){
+    console.error('Save update failed:',err);
+    showToast('Could not save update — check your connection',true);
+  }finally{
+    if(saveBtn){saveBtn.disabled=false;saveBtn.innerHTML=originalHtml;}
+  }
+}
+
+function markDone(id){
+  // The completed job itself just moves to History like any other job —
+  // no duplicate is ever created here. But if the Boss flagged it "Recurring"
+  // at dispatch time and it DIDN'T already come from a saved template, this
+  // is the first time we know for sure it's a repeat customer, so save it as
+  // a template now — that's the only "auto" part, and it lands in the
+  // Recurring tab, not back in Active Jobs. A job dispatched FROM an
+  // existing template (sourceTemplateId set) already has a template, so it
+  // doesn't get a second one.
+  const job=jobs.find(j=>j.id===id);
+  db.collection('jobs').doc(id).update({status:'Done'}).then(()=>{
+    if(job && job.recurring && !job.sourceTemplateId){
+      return db.collection('recurringJobs').add({
+        customer:job.customer,phone:job.phone,email:job.email,address:job.address,
+        jobtypes:job.jobtypes,members:job.members,
+        notes:job.notes,priority:job.priority,duration:job.duration,quantities:job.quantities,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      }).then(()=>showToast('Job marked done — saved to Recurring Jobs so it\'s ready to dispatch next time'));
+    }
+    showToast('Job marked done');
+  }).catch(err=>{console.error(err);showToast('Could not update job',true);});
+}
 function restoreJob(id){
-  const j=jobs.find(j=>j.id===id);
-  if(j){j.status='New';saveJobs();crewSubTab='active';
-  document.querySelectorAll('.sub-tab').forEach((b,i)=>b.classList.toggle('active',i===0));renderJobs();}
+  db.collection('jobs').doc(id).update({status:'New'}).then(()=>{
+    crewSubTab='active';
+    document.querySelectorAll('.sub-tab').forEach((b,i)=>b.classList.toggle('active',i===0));
+  }).catch(err=>{console.error(err);showToast('Could not restore job',true);});
 }
 function deleteJob(id){
-  if(confirm('Delete this job? This cannot be undone.')){jobs=jobs.filter(j=>j.id!==id);saveJobs();renderJobs();}
+  if(confirm('Delete this job? This cannot be undone.')){
+    db.collection('jobs').doc(id).delete().catch(err=>{console.error(err);showToast('Could not delete job',true);});
+  }
 }
 function openLightbox(src){document.getElementById('lightbox-img').src=src;document.getElementById('lightbox').classList.add('open');}
 function closeLightbox(){document.getElementById('lightbox').classList.remove('open');}
 
+// ---- Edit job (Boss tab only) ----
+function openEditJob(id){
+  const job=jobs.find(j=>j.id===id);
+  if(!job)return;
+  editMode='job';
+  editingJobId=id;
+  document.getElementById('edit-modal-title').innerHTML='<i class="ti ti-edit"></i> Edit Job';
+  document.getElementById('edit-save-btn').innerHTML='<i class="ti ti-device-floppy"></i> Save changes';
+  document.getElementById('edit-recurring-row').style.display='';
+  populateEditForm(job);
+  document.getElementById('edit-overlay').classList.add('open');
+}
+
+// Recurring job templates use the exact same modal/fields as editing a job —
+// pass id=null to create a new template, or an existing template's id to edit it.
+function openRecurringForm(id){
+  const tmpl=id?recurringJobs.find(r=>r.id===id):null;
+  if(id && !tmpl)return;
+  editMode='recurring';
+  editingJobId=id;
+  document.getElementById('edit-modal-title').innerHTML=id
+    ? '<i class="ti ti-refresh"></i> Edit Recurring Job'
+    : '<i class="ti ti-refresh"></i> New Recurring Job';
+  document.getElementById('edit-save-btn').innerHTML='<i class="ti ti-device-floppy"></i> Save recurring job';
+  // A template lives in the Recurring list by definition, so the toggle here
+  // (which only matters for the "Recurring" badge on a live job) is redundant.
+  document.getElementById('edit-recurring-row').style.display='none';
+  populateEditForm(tmpl||{});
+  document.getElementById('edit-overlay').classList.add('open');
+}
+
+function populateEditForm(data){
+  document.getElementById('edit-customer').value=data.customer||'';
+  document.getElementById('edit-phone').value=data.phone||'';
+  document.getElementById('edit-email').value=data.email||'';
+  document.getElementById('edit-address').value=data.address||'';
+  document.getElementById('edit-notes').value=data.notes||'';
+  document.getElementById('edit-duration').value=data.duration||'';
+  document.getElementById('edit-priority-sel').value=data.priority||'';
+  updateEditPriorityDot();
+
+  editIsRecurring=!!data.recurring;
+  document.getElementById('edit-recurring-toggle').classList.toggle('active',editIsRecurring);
+  document.getElementById('edit-recurring-switch').classList.toggle('on',editIsRecurring);
+
+  document.getElementById('edit-jt-grid').innerHTML=Object.keys(JOB_TYPE_UNITS).map(t=>
+    `<button type="button" class="jt-btn${(data.jobtypes||[]).includes(t)?' selected':''}" onclick="toggleEditJT(this)">${t}</button>`).join('');
+  editJobtypeQuantities={...(data.quantities||{})};
+  renderEditQtyInputs();
+
+  const allMembers=[...CREWS.vaquero,...CREWS.crew2,...CREWS.solo];
+  document.getElementById('edit-member-grid').innerHTML=allMembers.map(m=>
+    `<button type="button" class="m-btn${(data.members||[]).includes(m.name)?' selected':''}" onclick="toggleMember(this)">
+      ${m.name}${m.role?`<span class="role"><i class="ti ti-star-filled"></i></span>`:''}
+    </button>`).join('');
+}
+
+function closeEditModal(){
+  document.getElementById('edit-overlay').classList.remove('open');
+  const wasRecurring=editMode==='recurring';
+  editingJobId=null;
+  editMode='job';
+  if(wasRecurring)renderRecurringList();
+}
+
+function toggleEditJT(btn){btn.classList.toggle('selected');renderEditQtyInputs();}
+function getEditSelectedJTs(){return [...document.querySelectorAll('#edit-jt-grid .jt-btn.selected')].map(b=>b.textContent);}
+function getEditSelectedMembers(){return [...document.querySelectorAll('#edit-member-grid .m-btn.selected')].map(b=>b.textContent.trim());}
+
+function renderEditQtyInputs(){
+  const selected=getEditSelectedJTs();
+  const carried={};
+  selected.forEach(t=>{
+    const existing=editJobtypeQuantities[t];
+    carried[t]=(existing && typeof existing==='object')?existing:{qty:existing||'',unit:unitFor(t)};
+  });
+  editJobtypeQuantities=carried;
+
+  const section=document.getElementById('edit-qty-section');
+  const container=document.getElementById('edit-qty-inputs');
+  if(!selected.length){
+    section.style.display='none';
+    container.innerHTML='';
+    return;
+  }
+  section.style.display='block';
+  container.innerHTML=selected.map(t=>{
+    const entry=editJobtypeQuantities[t];
+    return `
+    <div class="qty-row">
+      <span class="qty-label">${t}</span>
+      <input type="number" min="0" placeholder="0" class="edit-qty-input" value="${entry.qty}" />
+      <div class="unit-toggle">
+        <button type="button" class="unit-btn${entry.unit==='ft'?' selected':''}" onclick="setEditJTUnit(this,'${t}','ft')">ft</button>
+        <button type="button" class="unit-btn${entry.unit==='Qty'?' selected':''}" onclick="setEditJTUnit(this,'${t}','Qty')">Qty</button>
+      </div>
+    </div>`;
+  }).join('');
+  container.querySelectorAll('.edit-qty-input').forEach((inp,i)=>{
+    inp.addEventListener('input',()=>{editJobtypeQuantities[selected[i]].qty=inp.value;});
+  });
+}
+
+function setEditJTUnit(btn,jobType,unit){
+  editJobtypeQuantities[jobType].unit=unit;
+  btn.parentElement.querySelectorAll('.unit-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function toggleEditRecurring(){
+  editIsRecurring=!editIsRecurring;
+  document.getElementById('edit-recurring-toggle').classList.toggle('active',editIsRecurring);
+  document.getElementById('edit-recurring-switch').classList.toggle('on',editIsRecurring);
+}
+
+function updateEditPriorityDot(){
+  const val=document.getElementById('edit-priority-sel').value;
+  const dot=document.getElementById('edit-priority-dot');
+  dot.className='priority-dot'+(val==='Low'?' low':val==='Medium'?' med':val==='High'?' high':'');
+}
+
+async function saveEditedJob(){
+  if(editMode==='job' && !editingJobId)return;
+  const customer=document.getElementById('edit-customer').value.trim();
+  const address=document.getElementById('edit-address').value.trim();
+  const jobtypes=getEditSelectedJTs();
+  const members=getEditSelectedMembers();
+  const priority=document.getElementById('edit-priority-sel').value;
+  if(!customer||!address||!jobtypes.length||!members.length||!priority){
+    alert('Please fill in: job site, address, at least one job type, priority, and at least one crew member.');
+    return;
+  }
+  const quantities={};
+  jobtypes.forEach(t=>{
+    const entry=editJobtypeQuantities[t];
+    if(entry && qtyOf(entry))quantities[t]={qty:qtyOf(entry),unit:unitOf(t,entry)};
+  });
+
+  const commonFields={
+    customer,
+    phone:document.getElementById('edit-phone').value.trim(),
+    email:document.getElementById('edit-email').value.trim(),
+    address,
+    jobtypes,
+    members,
+    notes:document.getElementById('edit-notes').value.trim(),
+    priority,
+    duration:document.getElementById('edit-duration').value,
+    quantities
+  };
+
+  const saveBtn=document.getElementById('edit-save-btn');
+  const originalHtml=saveBtn.innerHTML;
+  saveBtn.disabled=true;
+  saveBtn.innerHTML='<i class="ti ti-loader-2"></i> Saving...';
+
+  try{
+    if(editMode==='job'){
+      await db.collection('jobs').doc(editingJobId).update({...commonFields,recurring:editIsRecurring});
+      closeEditModal();
+      showToast('Job updated');
+    }else{
+      if(editingJobId){
+        await db.collection('recurringJobs').doc(editingJobId).update(commonFields);
+      }else{
+        await db.collection('recurringJobs').add({...commonFields,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      }
+      closeEditModal();
+      showToast('Recurring job saved');
+    }
+  }catch(err){
+    console.error('Save failed:',err);
+    showToast('Could not save — check your connection and try again',true);
+  }finally{
+    saveBtn.disabled=false;
+    saveBtn.innerHTML=originalHtml;
+  }
+}
+
+// ---- Recurring job templates ----
+function renderRecurringList(){
+  const list=document.getElementById('recurring-list');
+  if(!list)return;
+  const bossActions=isBossUnlocked();
+  const addBtn=document.getElementById('add-recurring-btn');
+  if(addBtn)addBtn.style.display=(bossActions && document.getElementById('recurring-tab').style.display!=='none')?'flex':'none';
+
+  if(!recurringJobs.length){
+    list.innerHTML=`<div class="empty"><i class="ti ti-refresh"></i>No recurring jobs yet.<br>${bossActions?'Add one to skip retyping customer details each visit.':'Ask the Boss to add one here.'}</div>`;
+    return;
+  }
+  list.innerHTML=recurringJobs.map(r=>`
+    <div class="job-card">
+      <div class="job-card-header">
+        <div>
+          <div class="job-title">${r.customer}</div>
+          ${r.members&&r.members.length?`<div class="job-meta"><i class="ti ti-users" style="font-size:12px"></i> ${r.members.join(', ')}</div>`:''}
+        </div>
+      </div>
+      ${r.jobtypes&&r.jobtypes.length?`<div style="margin-bottom:6px">${r.jobtypes.map(t=>`<span class="jt-tag">${t}</span>`).join('')}</div>`:''}
+      ${r.address?`<div style="font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:4px;color:var(--color-text-secondary)"><i class="ti ti-map-pin" style="font-size:13px"></i> ${r.address}</div>`:''}
+      ${r.phone?`<div style="font-size:13px;color:var(--color-text-secondary);margin-bottom:4px"><i class="ti ti-phone" style="font-size:13px"></i> ${r.phone}</div>`:''}
+      ${r.notes?`<div class="job-notes">"${r.notes}"</div>`:''}
+      ${bossActions?`
+      <div class="status-row">
+        <button class="status-btn" onclick="loadDispatchFormFromTemplate('${r.id}')"><i class="ti ti-send"></i> Dispatch this week</button>
+        <button class="status-btn" onclick="openRecurringForm('${r.id}')"><i class="ti ti-edit"></i> Edit</button>
+        <button class="status-btn" onclick="deleteRecurringJob('${r.id}')" style="margin-left:auto"><i class="ti ti-trash"></i></button>
+      </div>`:''}
+    </div>`).join('');
+}
+
+function deleteRecurringJob(id){
+  if(confirm('Delete this recurring job template? This cannot be undone.')){
+    db.collection('recurringJobs').doc(id).delete().then(()=>{
+      showToast('Recurring job deleted');
+    }).catch(err=>{console.error(err);showToast('Could not delete recurring job',true);});
+  }
+}
+
+// Loads a recurring template into the regular Dispatch form (Boss tab) so
+// the Boss can review/tweak it for this specific week before hitting Send —
+// nothing is dispatched until they actually click Send.
+function loadDispatchFormFromTemplate(id){
+  const tmpl=recurringJobs.find(r=>r.id===id);
+  if(!tmpl)return;
+  dispatchFromTemplateId=id;
+
+  switchTab('boss');
+  document.querySelectorAll('#panel-boss .sub-tab').forEach((b,i)=>b.classList.toggle('active',i===0));
+  document.getElementById('boss-dispatch-tab').style.display='block';
+  document.getElementById('boss-performance-tab').style.display='none';
+  bossSubTab='dispatch';
+
+  document.getElementById('customer').value=tmpl.customer||'';
+  document.getElementById('phone').value=tmpl.phone||'';
+  document.getElementById('email').value=tmpl.email||'';
+  document.getElementById('address').value=tmpl.address||'';
+  document.getElementById('notes').value=tmpl.notes||'';
+  document.getElementById('duration').value=tmpl.duration||'';
+  document.getElementById('priority-sel').value=tmpl.priority||'';
+  updatePriorityDot();
+
+  document.getElementById('job-type-grid').innerHTML=Object.keys(JOB_TYPE_UNITS).map(t=>
+    `<button class="jt-btn${(tmpl.jobtypes||[]).includes(t)?' selected':''}" onclick="toggleJT(this)">${t}</button>`).join('');
+  jobtypeQuantities={...(tmpl.quantities||{})};
+  renderQtyInputs();
+
+  const allMembers=[...CREWS.vaquero,...CREWS.crew2,...CREWS.solo];
+  document.getElementById('member-grid').innerHTML=allMembers.map(m=>
+    `<button class="m-btn${(tmpl.members||[]).includes(m.name)?' selected':''}" onclick="toggleMember(this)">
+      ${m.name}${m.role?`<span class="role"><i class="ti ti-star-filled"></i></span>`:''}
+    </button>`).join('');
+  activeTeam='';
+  document.querySelectorAll('.ct-btn').forEach(b=>b.className='ct-btn');
+
+  isRecurring=true;
+  document.getElementById('recurring-toggle').classList.add('active');
+  document.getElementById('recurring-switch').classList.add('on');
+
+  photos=[];renderPreviews();
+
+  showToast(`Loaded ${tmpl.customer} — review and hit Send to dispatch this week's visit`);
+}
+
+// ---- Invoices ----
+let invoiceMaterials=[];
+
+function renderInvoiceJobPicker(){
+  const sel=document.getElementById('inv-job-select');
+  if(!sel)return;
+  const current=sel.value;
+  sel.innerHTML='<option value="">Choose a job...</option>'+
+    jobs.map(j=>`<option value="${j.id}">${j.customer||'(no name)'} — ${j.address||''} (${j.date||''})</option>`).join('');
+  if(current && jobs.some(j=>j.id===current)){
+    sel.value=current;
+  }else{
+    document.getElementById('invoice-form').style.display='none';
+    document.getElementById('invoice-empty').style.display='block';
+  }
+}
+
+function loadInvoiceFromJob(){
+  const id=document.getElementById('inv-job-select').value;
+  const form=document.getElementById('invoice-form');
+  const empty=document.getElementById('invoice-empty');
+  if(!id){form.style.display='none';empty.style.display='block';return;}
+  const job=jobs.find(j=>j.id===id);
+  if(!job)return;
+  form.style.display='block';
+  empty.style.display='none';
+
+  const today=new Date();
+  document.getElementById('inv-number').value=
+    `INV-${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}-${id.slice(0,4).toUpperCase()}`;
+  document.getElementById('inv-date').value=today.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});
+  document.getElementById('inv-billto').value=job.customer||'';
+  document.getElementById('inv-email').value=job.email||'';
+  document.getElementById('inv-site').value=job.address||'';
+
+  const allMembers=[...CREWS.vaquero,...CREWS.crew2,...CREWS.solo];
+  const foreman=(job.members||[]).find(name=>allMembers.some(m=>m.name===name&&m.role==='foreman'));
+  document.getElementById('inv-foreman').value=foreman||(job.members?job.members.join(', '):'');
+
+  document.getElementById('inv-phase').value='';
+  document.getElementById('inv-landvert').value='Land';
+  document.getElementById('inv-complete').value=job.status==='Done'?'Yes':'No';
+  document.getElementById('inv-amount').value='';
+
+  invoiceMaterials=(job.quantities&&Object.keys(job.quantities).length)
+    ? Object.entries(job.quantities).map(([t,q])=>({material:`${t} (${unitOf(t,q)})`,qty:qtyOf(q),location:''}))
+    : (job.jobtypes||[]).map(t=>({material:t,qty:'',location:''}));
+  renderInvoiceMaterials();
+
+  document.getElementById('inv-machine-notes').value='';
+  document.getElementById('inv-labor-notes').value=(job.crewNotes||[]).map(n=>`${n.text} (${n.date} ${n.time})`).join('\n');
+  document.getElementById('inv-other-notes').value=job.notes||'';
+}
+
+function renderInvoiceMaterials(){
+  const c=document.getElementById('inv-materials');
+  c.innerHTML=invoiceMaterials.map((m,i)=>`
+    <div class="inv-mat-row">
+      <input type="text" class="inv-mat-name" placeholder="Material" value="${m.material}" oninput="invoiceMaterials[${i}].material=this.value" />
+      <input type="text" class="inv-mat-qty" placeholder="Qty" value="${m.qty}" oninput="invoiceMaterials[${i}].qty=this.value" />
+      <input type="text" class="inv-mat-loc" placeholder="Location" value="${m.location||''}" oninput="invoiceMaterials[${i}].location=this.value" />
+      <button type="button" class="inv-rm-btn" onclick="removeInvoiceMaterialRow(${i})" aria-label="Remove material"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+}
+function addInvoiceMaterialRow(){invoiceMaterials.push({material:'',qty:'',location:''});renderInvoiceMaterials();}
+function removeInvoiceMaterialRow(i){invoiceMaterials.splice(i,1);renderInvoiceMaterials();}
+
+function showInvoiceToast(msg,isError){
+  const t=document.getElementById('toast-inv');
+  document.getElementById('toast-inv-msg').textContent=msg;
+  t.classList.toggle('error',!!isError);
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+function invoiceEmailReady(){
+  return typeof emailjs!=='undefined' && !EMAILJS_PUBLIC_KEY.startsWith('YOUR_');
+}
+
+function materialsToText(materials){
+  return (materials||[])
+    .filter(m=>m.material)
+    .map(m=>`${m.material} — Qty: ${m.qty||'-'}${m.location?` — Location: ${m.location}`:''}`)
+    .join('\n');
+}
+
+async function deliverInvoice(record, btn){
+  const originalHtml=btn.innerHTML;
+  btn.disabled=true;
+  btn.innerHTML='<i class="ti ti-loader-2"></i> Sending...';
+
+  const params={
+    to_email:record.email,
+    to_name:record.billTo,
+    invoice_number:record.invoiceNumber,
+    invoice_date:record.invoiceDate,
+    site:record.site,
+    foreman:record.foreman,
+    phase:record.phase,
+    land_or_vertical:record.landOrVertical,
+    job_complete:record.jobComplete,
+    materials_list:materialsToText(record.materials),
+    invoice_amount:record.amount?`$${Number(record.amount).toFixed(2)}`:'',
+    machine_notes:record.machineNotes,
+    labor_notes:record.laborNotes,
+    other_notes:record.otherNotes,
+    from_name:COMPANY_LEGAL_NAME
+  };
+
+  try{
+    await emailjs.send(EMAILJS_SERVICE_ID,EMAILJS_TEMPLATE_ID,params);
+    await db.collection('invoices').add({...record,sentAt:firebase.firestore.FieldValue.serverTimestamp()});
+    showInvoiceToast(`Invoice sent to ${record.email}`);
+    return true;
+  }catch(err){
+    console.error('Invoice send failed:',err);
+    showInvoiceToast('Could not send invoice — check your connection and EmailJS setup',true);
+    return false;
+  }finally{
+    btn.disabled=false;
+    btn.innerHTML=originalHtml;
+  }
+}
+
+async function sendInvoice(){
+  const email=document.getElementById('inv-email').value.trim();
+  const billTo=document.getElementById('inv-billto').value.trim();
+  if(!email){showInvoiceToast('Add a customer email before sending',true);return;}
+  if(!billTo){showInvoiceToast('Add a bill-to name before sending',true);return;}
+  if(!invoiceEmailReady()){
+    showInvoiceToast('Email sending isn\'t set up yet — add your EmailJS keys first',true);
+    return;
+  }
+
+  const jobId=document.getElementById('inv-job-select').value||null;
+  const record={
+    jobId,
+    invoiceNumber:document.getElementById('inv-number').value,
+    invoiceDate:document.getElementById('inv-date').value,
+    billTo,
+    email,
+    site:document.getElementById('inv-site').value,
+    foreman:document.getElementById('inv-foreman').value,
+    phase:document.getElementById('inv-phase').value,
+    landOrVertical:document.getElementById('inv-landvert').value,
+    jobComplete:document.getElementById('inv-complete').value,
+    materials:invoiceMaterials.filter(m=>m.material),
+    amount:parseFloat(document.getElementById('inv-amount').value)||0,
+    machineNotes:document.getElementById('inv-machine-notes').value,
+    laborNotes:document.getElementById('inv-labor-notes').value,
+    otherNotes:document.getElementById('inv-other-notes').value
+  };
+
+  await deliverInvoice(record,document.getElementById('inv-send-btn'));
+}
+
+function renderInvoiceHistory(){
+  const list=document.getElementById('invoice-history-list');
+  if(!list)return;
+  if(!sentInvoices.length){
+    list.innerHTML=`<div class="empty"><i class="ti ti-history"></i>No invoices sent yet.<br>Sent invoices will appear here.</div>`;
+    return;
+  }
+  list.innerHTML=sentInvoices.map(inv=>`
+    <div class="job-card">
+      <div class="job-card-header">
+        <div>
+          <div class="job-title">${inv.invoiceNumber||'Invoice'}</div>
+          <div class="job-meta"><i class="ti ti-user" style="font-size:12px"></i> ${inv.billTo||''} &nbsp;·&nbsp; ${inv.invoiceDate||''}</div>
+        </div>
+        ${inv.amount?`<div class="badge badge-done">$${Number(inv.amount).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`:''}
+      </div>
+      <div style="font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:4px;color:var(--color-text-secondary)">
+        <i class="ti ti-map-pin" style="font-size:13px"></i> ${inv.site||''}
+      </div>
+      <div style="font-size:13px;display:flex;align-items:center;gap:5px;margin-bottom:8px;color:var(--color-text-secondary)">
+        <i class="ti ti-mail" style="font-size:13px"></i> Sent to ${inv.email||''}
+      </div>
+      ${(inv.materials&&inv.materials.length)?`<div class="job-detail-row" style="margin-bottom:6px">${inv.materials.map(m=>`<span><i class="ti ti-ruler"></i> ${m.material}: ${m.qty||'-'}</span>`).join('')}</div>`:''}
+      <div class="status-row">
+        <button class="status-btn" id="resend-btn-${inv.id}" onclick="resendInvoice('${inv.id}')"><i class="ti ti-send"></i> Resend</button>
+      </div>
+    </div>`).join('');
+}
+
+async function resendInvoice(id){
+  const inv=sentInvoices.find(i=>i.id===id);
+  if(!inv)return;
+  if(!invoiceEmailReady()){
+    showInvoiceToast('Email sending isn\'t set up yet — add your EmailJS keys first',true);
+    return;
+  }
+  const btn=document.getElementById(`resend-btn-${id}`);
+  await deliverInvoice({
+    jobId:inv.jobId||null,
+    invoiceNumber:inv.invoiceNumber,
+    invoiceDate:inv.invoiceDate,
+    billTo:inv.billTo,
+    email:inv.email,
+    site:inv.site,
+    foreman:inv.foreman,
+    phase:inv.phase,
+    landOrVertical:inv.landOrVertical,
+    jobComplete:inv.jobComplete,
+    materials:inv.materials,
+    amount:inv.amount||0,
+    machineNotes:inv.machineNotes,
+    laborNotes:inv.laborNotes,
+    otherNotes:inv.otherNotes
+  },btn);
+}
+
+function renderJobTypeGrid(){
+  const container=document.getElementById('job-type-grid');
+  container.innerHTML=Object.keys(JOB_TYPE_UNITS).map(t=>
+    `<button class="jt-btn" onclick="toggleJT(this)">${t}</button>`).join('');
+}
+
+function renderCrewFilterChips(){
+  const container=document.getElementById('crew-filter');
+  const allMembers=[...CREWS.vaquero,...CREWS.crew2,...CREWS.solo];
+  container.insertAdjacentHTML('beforeend', allMembers.map(m=>
+    `<div class="filter-chip" onclick="filterCrew(this,'${m.name}')">${m.name}</div>`).join(''));
+}
+
+renderJobTypeGrid();
+renderCrewFilterChips();
 renderJobs();
+renderInvoiceJobPicker();
+renderInvoiceHistory();
+renderPerformance();
+updateOfflineBanner();
+flushPendingOps();
+if(isBossUnlocked())switchTab('boss');
 </script>
 </body>
 </html>
-
